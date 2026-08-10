@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard — Thimi Investment{% endblock %}
+
+{% block content %}
+
+{% include 'includes/sidebar.html' %}
+
+<div class="main-content">
+
+    {% include 'includes/navbar.html' %}
+
+    <div class="container-fluid mt-4 pb-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">📊 Admin Dashboard</h2>
+            <a href="/admin/" class="btn btn-sm btn-dark">
+                🔧 Django Admin Panel
+            </a>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card shadow border-0 bg-primary text-white">
+                    <div class="card-body text-center">
+                        <div class="fs-4 fw-bold" id="totalMembers">—</div>
+                        <small>Total Members</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card shadow border-0 bg-success text-white">
+                    <div class="card-body text-center">
+                        <div class="fs-4 fw-bold" id="activeMembers">—</div>
+                        <small>Active Members</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card shadow border-0 bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <div class="fs-4 fw-bold" id="pendingDeposits">—</div>
+                        <small>Pending Deposits</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card shadow border-0 bg-info text-white">
+                    <div class="card-body text-center">
+                        <div class="fs-4 fw-bold" id="approvedDeposits">—</div>
+                        <small>Approved</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card shadow border-0 bg-danger text-white">
+                    <div class="card-body text-center">
+                        <div class="fs-4 fw-bold" id="rejectedDeposits">—</div>
+                        <small>Rejected</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card shadow border-0 bg-dark text-white">
+                    <div class="card-body text-center">
+                        <div class="fs-5 fw-bold" id="totalCollection">Rs. —</div>
+                        <small>Total Collected</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Summary Cards -->
+        <h5 class="fw-bold mb-3 mt-4">💰 Group Financial Summary</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Total Deposits Collected</small>
+                        <div class="fs-5 fw-bold text-success" id="fin_total_collected">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Total Cash in Hand</small>
+                        <div class="fs-5 fw-bold text-primary" id="fin_total_cash">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Total Share Investment</small>
+                        <div class="fs-5 fw-bold text-info" id="fin_share_invested">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Current Share Market Value</small>
+                        <div class="fs-5 fw-bold text-warning" id="fin_share_value">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Total Loans Outstanding</small>
+                        <div class="fs-5 fw-bold text-danger" id="fin_loan_total">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Total Interest Collected</small>
+                        <div class="fs-5 fw-bold text-success" id="fin_interest_total">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Total Share Loss (to date)</small>
+                        <div class="fs-5 fw-bold text-danger" id="fin_share_loss">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <small class="text-muted">Pawan Bank Remaining Cash</small>
+                        <div class="fs-5 fw-bold text-secondary" id="fin_pawan_bank">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs: Loans / Stocks / Hydropower -->
+        <div class="card shadow border-0 mt-4">
+            <div class="card-header bg-white border-bottom">
+                <ul class="nav nav-tabs card-header-tabs" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="adminLoans-tab" data-bs-toggle="tab"
+                            data-bs-target="#adminLoansTab" type="button">💳 Loans</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="adminStocks-tab" data-bs-toggle="tab"
+                            data-bs-target="#adminStocksTab" type="button">📈 Stock Transactions</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="adminInventory-tab" data-bs-toggle="tab"
+                            data-bs-target="#adminInventoryTab" type="button">🗂 Share Inventory</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="adminHydro-tab" data-bs-toggle="tab"
+                            data-bs-target="#adminHydroTab" type="button">💧 Hydropower Plan</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body tab-content p-3">
+
+                <!-- Loans Tab -->
+                <div class="tab-pane fade show active" id="adminLoansTab" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Borrower</th>
+                                    <th>Principal (Rs.)</th>
+                                    <th>Disbursed On</th>
+                                    <th>Interest Paid (Rs.)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminLoansTable">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Stock Transactions Tab -->
+                <div class="tab-pane fade" id="adminStocksTab" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Symbol</th>
+                                    <th>Shares</th>
+                                    <th>Buy Price</th>
+                                    <th>Buy Total (Rs.)</th>
+                                    <th>Sell Price</th>
+                                    <th>Sell Total (Rs.)</th>
+                                    <th>P&L (Rs.)</th>
+                                    <th>Remarks</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStocksTable">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Share Inventory Tab -->
+                <div class="tab-pane fade" id="adminInventoryTab" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Stock Symbol</th>
+                                    <th>Kitta Held</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminInventoryTable">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Hydropower Tab -->
+                <div class="tab-pane fade" id="adminHydroTab" role="tabpanel">
+                    <div class="alert alert-warning">Status: <strong>Dismissed Plan</strong></div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Contribution (Rs.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminHydroTable">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    {% include 'includes/footer.html' %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    window.onload = async function () {
+        const data = await apiRequest("/deposits/admin/dashboard/");
+        if (!data) return;
+
+        // Stat cards
+        document.getElementById("totalMembers").innerText = data.total_members;
+        document.getElementById("activeMembers").innerText = data.active_members;
+        document.getElementById("pendingDeposits").innerText = data.pending_deposits;
+        document.getElementById("approvedDeposits").innerText = data.approved_deposits;
+        document.getElementById("rejectedDeposits").innerText = data.rejected_deposits;
+        document.getElementById("totalCollection").innerText = "Rs. " + parseFloat(data.total_collection).toLocaleString();
+
+        const thimi = data.thimi_data;
+        if (!thimi) return;
+
+        const fin = thimi.financial_summary;
+        // Financial summary cards
+        document.getElementById("fin_total_collected").innerText = "Rs. " + fin.total_amount_collected.toLocaleString();
+        document.getElementById("fin_total_cash").innerText = "Rs. " + fin.total_cash.toLocaleString();
+        document.getElementById("fin_share_invested").innerText = "Rs. " + fin.total_amount_invested_on_shares.toLocaleString();
+        document.getElementById("fin_share_value").innerText = "Rs. " + fin.share_value.toLocaleString();
+        document.getElementById("fin_loan_total").innerText = "Rs. " + thimi.loans.total_principal.toLocaleString();
+        document.getElementById("fin_interest_total").innerText = "Rs. " + thimi.loans.total_interest_paid.toLocaleString();
+        document.getElementById("fin_share_loss").innerText = "Rs. " + thimi.stock_transactions.total_loss_in_shares_till_date.toLocaleString();
+        document.getElementById("fin_pawan_bank").innerText = "Rs. " + fin.pawan_summary.cash_remaining_in_bank.toLocaleString();
+
+        // Loans table
+        let loansHtml = "";
+        thimi.loans.records.forEach(r => {
+            loansHtml += `<tr>
+            <td>${r.s_no}</td>
+            <td>${r.name}</td>
+            <td>${r.amount.toLocaleString()}</td>
+            <td>${r.disbursement_date}</td>
+            <td>${r.interest_paid.toLocaleString()}</td>
+            <td><span class="badge bg-${r.status === 'Closed' ? 'secondary' : 'success'}">${r.status}</span></td>
+        </tr>`;
+        });
+        document.getElementById("adminLoansTable").innerHTML = loansHtml;
+
+        // Stock transactions table
+        const statusColor = s => s === 'Sold' ? 'success' : s === 'Holding' ? 'primary' : s === 'Loss' ? 'danger' : 'secondary';
+        let stocksHtml = "";
+        thimi.stock_transactions.transactions.forEach(t => {
+            const pl = t.profit_loss !== undefined ? `<span class="text-${t.profit_loss >= 0 ? 'success' : 'danger'} fw-bold">Rs. ${t.profit_loss.toLocaleString()}</span>` : '—';
+            stocksHtml += `<tr>
+            <td>${t.date || '—'}</td>
+            <td><strong>${t.symbol}</strong></td>
+            <td>${t.shares}</td>
+            <td>${t.buying_price !== undefined ? t.buying_price : '—'}</td>
+            <td>${t.buy_amount_with_tax !== undefined ? t.buy_amount_with_tax.toLocaleString() : '—'}</td>
+            <td>${t.selling_price !== undefined ? t.selling_price : '—'}</td>
+            <td>${t.sell_amount_after_tax !== undefined ? t.sell_amount_after_tax.toLocaleString() : '—'}</td>
+            <td>${pl}</td>
+            <td><small class="text-muted">${t.remarks || '—'}</small></td>
+            <td><span class="badge bg-${statusColor(t.status)}">${t.status}</span></td>
+        </tr>`;
+        });
+        document.getElementById("adminStocksTable").innerHTML = stocksHtml;
+
+        // Share inventory table
+        let invHtml = "";
+        thimi.stock_transactions.share_inventory.forEach(s => {
+            invHtml += `<tr><td><strong>${s.stock}</strong></td><td>${s.no_of_kitta}</td></tr>`;
+        });
+        document.getElementById("adminInventoryTable").innerHTML = invHtml;
+
+        // Hydropower table
+        let hydroHtml = "";
+        thimi.hydropower_plan.deposits.forEach(d => {
+            hydroHtml += `<tr>
+            <td>${d.name}</td>
+            <td>${d.amount !== null ? 'Rs. ' + d.amount.toLocaleString() : '<span class="text-muted">—</span>'}</td>
+        </tr>`;
+        });
+        document.getElementById("adminHydroTable").innerHTML = hydroHtml;
+    };
+</script>
+{% endblock %}

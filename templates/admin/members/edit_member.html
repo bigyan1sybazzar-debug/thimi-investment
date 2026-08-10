@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Edit Member — Thimi Investment{% endblock %}
+{% block content %}
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+    <div class="container-fluid mt-4 pb-5">
+        <div class="mb-3">
+            <a href="/members/" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Members
+            </a>
+        </div>
+
+        <h2 class="mb-4">✏️ Edit Member</h2>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-0 shadow">
+                    <div class="card-body p-4">
+
+                        <div id="editAlert"></div>
+
+                        <form id="editMemberForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Member ID</label>
+                                    <input type="text" class="form-control" id="fieldMemberId" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Username / Login Email</label>
+                                    <input type="text" class="form-control" id="fieldUsername" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Phone</label>
+                                    <input type="text" class="form-control" id="fieldPhone" placeholder="Phone number">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Address</label>
+                                    <input type="text" class="form-control" id="fieldAddress" placeholder="Address">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <select class="form-select" id="fieldStatus">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-check-circle"></i> Save Changes
+                                </button>
+                                <a href="/members/" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'includes/footer.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    const memberId = {{ id }};
+
+    window.onload = async function () {
+        const member = await apiRequest(`/members/${memberId}/`);
+        if (!member) return;
+
+        document.getElementById("fieldMemberId").value = member.member_id;
+        document.getElementById("fieldUsername").value = member.username;
+        document.getElementById("fieldPhone").value = member.phone || "";
+        document.getElementById("fieldAddress").value = member.address || "";
+        document.getElementById("fieldStatus").value = member.is_active_member ? "true" : "false";
+    };
+
+    document.getElementById("editMemberForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const payload = {
+            phone: document.getElementById("fieldPhone").value,
+            address: document.getElementById("fieldAddress").value,
+            is_active_member: document.getElementById("fieldStatus").value === "true",
+        };
+
+        const result = await apiRequest(`/members/${memberId}/update/`, "PATCH", payload);
+        const alertDiv = document.getElementById("editAlert");
+
+        if (result && !result.detail) {
+            alertDiv.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle"></i> Member updated successfully!</div>`;
+            setTimeout(() => window.location.href = `/members/profile/${memberId}/`, 1500);
+        } else {
+            alertDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle"></i> Failed to update: ${JSON.stringify(result)}</div>`;
+        }
+    });
+</script>
+{% endblock %}

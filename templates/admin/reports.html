@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Reports — Thimi Investment{% endblock %}
+{% block content %}
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+    <div class="container-fluid mt-4 pb-5">
+        <h2 class="mb-4">📊 Reports</h2>
+
+        <!-- Financial Year Summary -->
+        <div class="card border-0 shadow mb-4">
+            <div class="card-header bg-white fw-bold">📅 Financial Summary (Till 2025 End)</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="fw-bold text-success fs-5">Rs. 13,58,015</div>
+                            <small class="text-muted">Total Amount Collected</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="fw-bold text-primary fs-5">Rs. 1,08,507.35</div>
+                            <small class="text-muted">Total Cash (Bank + Hand)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="fw-bold text-info fs-5">Rs. 98,107.35</div>
+                            <small class="text-muted">Final Cash (Till 2025)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="fw-bold text-warning fs-5">Rs. 5,43,124.5</div>
+                            <small class="text-muted">Pradeep Bank + Share Profit</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="fw-bold text-secondary fs-5">Rs. 8,28,414.55</div>
+                            <small class="text-muted">Pawan Bank Total Collected</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="fw-bold text-danger fs-5">Rs. 1,17,128.7</div>
+                            <small class="text-muted">Total Share Loss</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Collection Installments -->
+        <div class="card border-0 shadow mb-4">
+            <div class="card-header bg-white fw-bold">📆 Monthly Collection by Installment</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Installment</th>
+                                <th>Total Collected (Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="installmentsTable">
+                            <tr>
+                                <td colspan="2" class="text-center text-muted">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fine and Penalties -->
+        <div class="card border-0 shadow">
+            <div class="card-header bg-white fw-bold">⚠️ Fines & Penalties</div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Bikalpa Khadka</strong> — Monthly Addition: Rs. 21,600 + Rs. 8,395 = <strong>Rs.
+                        29,995</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'includes/footer.html' %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    const installments = [
+        { i: "1st", a: 75400 }, { i: "2nd", a: 76200 }, { i: "3rd", a: 76300 }, { i: "4th", a: 75200 },
+        { i: "5th", a: 75200 }, { i: "6th", a: 75000 }, { i: "7th", a: 75300 }, { i: "8th", a: 77400 },
+        { i: "9th", a: 78437 }, { i: "10th", a: 77221 }, { i: "11th", a: 76341 }, { i: "12th", a: 76819 },
+        { i: "13th", a: 70247 }, { i: "14th", a: 70000 }, { i: "15th", a: 75325 }, { i: "16th", a: 75011 },
+        { i: "17th", a: 75007 }, { i: "18th", a: 76607 }, { i: "19th", a: 83202 }, { i: "20th", a: 83202 },
+        { i: "21st", a: 66001 }, { i: "22nd", a: 75001 }, { i: "23rd", a: 79104 }, { i: "24th", a: 25000 }
+    ];
+    document.getElementById("installmentsTable").innerHTML = installments.map(
+        r => `<tr><td>${r.i} Installment</td><td>Rs. ${r.a.toLocaleString()}</td></tr>`
+    ).join('');
+</script>
+{% endblock %}

@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Investments — Thimi Investment{% endblock %}
+{% block content %}
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+    <div class="container-fluid mt-4 pb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">📈 Investments</h2>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="openAddTransactionModal()">
+                    <i class="bi bi-plus-circle"></i> Add Transaction
+                </button>
+                <button class="btn btn-outline-primary" onclick="openAddInventoryModal()">
+                    <i class="bi bi-folder-plus"></i> Add Share Inventory
+                </button>
+            </div>
+        </div>
+
+        <div id="investmentsAlert"></div>
+
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="fs-5 fw-bold text-primary">Rs. 5,40,656.7</div>
+                        <small class="text-muted">Total Invested (Static Reference)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="fs-5 fw-bold text-success">Rs. 5,07,493.4</div>
+                        <small class="text-muted">Current Value (Static Reference)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="fs-5 fw-bold text-danger">Rs. 1,17,128.7</div>
+                        <small class="text-muted">Total Loss (Static Reference)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="fs-5 fw-bold text-info">06/05/2026</div>
+                        <small class="text-muted">LTP Date</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Share Inventory -->
+        <div class="card border-0 shadow mb-4">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                <span>🗂 Active Share Inventory</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Stock</th>
+                                <th>Kitta (Qty)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody">
+                            <tr>
+                                <td colspan="3" class="text-center py-3 text-muted">Loading inventory…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full Transaction History -->
+        <div class="card border-0 shadow">
+            <div class="card-header bg-white fw-bold">📋 Full Stock Transaction History</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Date</th>
+                                <th>Symbol</th>
+                                <th>Qty</th>
+                                <th>Buy Price (Rs.)</th>
+                                <th>Buy Total (Rs.)</th>
+                                <th>Sell Price (Rs.)</th>
+                                <th>Sell Total (Rs.)</th>
+                                <th>P&amp;L (Rs.)</th>
+                                <th>By</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody">
+                            <tr>
+                                <td colspan="11" class="text-center py-4 text-muted">Loading transactions…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% include 'includes/footer.html' %}
+</div>
+
+<!-- Transaction Modal -->
+<div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="transactionForm">
+                <input type="hidden" id="txId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transactionModalLabel">Add Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Symbol</label>
+                            <input type="text" class="form-control text-uppercase" id="txSymbol" required
+                                placeholder="PRVU">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Shares (Qty)</label>
+                            <input type="number" class="form-control" id="txShares" required min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="text" class="form-control" id="txDate" required
+                                placeholder="YYYY-MM-DD or Nepali date">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="txStatus" required>
+                                <option value="Holding">Holding</option>
+                                <option value="Sold">Sold</option>
+                                <option value="Loss">Loss</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Buying Price (Rs.)</label>
+                            <input type="number" step="0.01" class="form-control" id="txBuyPrice" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Buy Total (Rs.)</label>
+                            <input type="number" step="0.01" class="form-control" id="txBuyTotal" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Selling Price (Rs.)</label>
+                            <input type="number" step="0.01" class="form-control" id="txSellPrice" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Sell Total (Rs.)</label>
+                            <input type="number" step="0.01" class="form-control" id="txSellTotal" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Profit/Loss (P&amp;L)</label>
+                            <input type="number" step="0.01" class="form-control" id="txPL" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Invested By (Name)</label>
+                            <input type="text" class="form-control" id="txRemarks" placeholder="Pradeep / Pawan">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-header border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm ms-auto">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Share Inventory Modal -->
+<div class="modal fade" id="inventoryModal" tabindex="-1" aria-labelledby="inventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="inventoryForm">
+                <input type="hidden" id="invId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inventoryModalLabel">Add Inventory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Stock Symbol</label>
+                        <input type="text" class="form-control text-uppercase" id="invStock" required
+                            placeholder="UMHL">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Number of Kitta (Qty)</label>
+                        <input type="number" class="form-control" id="invKitta" required min="0" placeholder="215">
+                    </div>
+                </div>
+                <div class="modal-header border-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm ms-auto">Save Inventory</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    let txModal, invModal;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        txModal = new bootstrap.Modal(document.getElementById('transactionModal'));
+        invModal = new bootstrap.Modal(document.getElementById('inventoryModal'));
+        loadInventory();
+        loadTransactions();
+    });
+
+    async function loadInventory() {
+        const data = await apiRequest("/investments/inventory/");
+        const tbody = document.getElementById("inventoryTableBody");
+        if (!data) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Failed to load share inventory.</td></tr>`;
+            return;
+        }
+        if (!data.length) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">No share inventory records.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(inv => `
+        <tr>
+            <td><strong>${inv.stock}</strong></td>
+            <td>${parseInt(inv.no_of_kitta).toLocaleString()}</td>
+            <td>
+                <button class="btn btn-xs btn-outline-primary btn-sm" onclick='openEditInventoryModal(${JSON.stringify(inv)})'><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-xs btn-outline-danger btn-sm ms-1" onclick="deleteInventory(${inv.id})"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`).join('');
+    }
+
+    async function loadTransactions() {
+        const data = await apiRequest("/investments/stocks/");
+        const tbody = document.getElementById("transactionsTableBody");
+        if (!data) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center text-danger">Failed to load transaction history.</td></tr>`;
+            return;
+        }
+        if (!data.length) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-4">No transactions.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(tx => {
+            const tableClassMap = { Holding: "table-info", Sold: "table-success", Loss: "table-danger" };
+            const badgeClassMap = { Holding: "primary", Sold: "success", Loss: "danger" };
+            const pl = parseFloat(tx.profit_loss);
+            const plText = pl > 0 ? `+${pl.toLocaleString()}` : (pl < 0 ? pl.toLocaleString() : (tx.status === 'Loss' ? 'Loss' : '—'));
+            const plClass = pl > 0 ? 'text-success fw-bold' : (pl < 0 ? 'text-danger fw-bold' : '');
+
+            return `
+            <tr class="${tableClassMap[tx.status]}">
+                <td>${tx.date}</td>
+                <td><strong>${tx.symbol}</strong></td>
+                <td>${tx.shares}</td>
+                <td>${tx.buying_price ? parseFloat(tx.buying_price).toLocaleString() : '—'}</td>
+                <td>${tx.buy_amount_with_tax ? parseFloat(tx.buy_amount_with_tax).toLocaleString() : '—'}</td>
+                <td>${tx.selling_price ? parseFloat(tx.selling_price).toLocaleString() : '—'}</td>
+                <td>${tx.sell_amount_after_tax ? parseFloat(tx.sell_amount_after_tax).toLocaleString() : '—'}</td>
+                <td class="${plClass}">${plText}</td>
+                <td>${tx.remarks || '—'}</td>
+                <td><span class="badge bg-${badgeClassMap[tx.status]}">${tx.status}</span></td>
+                <td>
+                    <button class="btn btn-xs btn-outline-primary btn-sm" onclick='openEditTransactionModal(${JSON.stringify(tx)})'><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-xs btn-outline-danger btn-sm ms-1" onclick="deleteTransaction(${tx.id})"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function openAddTransactionModal() {
+        document.getElementById("transactionForm").reset();
+        document.getElementById("txId").value = "";
+        document.getElementById("transactionModalLabel").innerText = "Add Transaction";
+        document.getElementById("txDate").value = new Date().toISOString().split('T')[0];
+        txModal.show();
+    }
+
+    function openEditTransactionModal(tx) {
+        document.getElementById("txId").value = tx.id;
+        document.getElementById("txSymbol").value = tx.symbol;
+        document.getElementById("txShares").value = tx.shares;
+        document.getElementById("txDate").value = tx.date;
+        document.getElementById("txStatus").value = tx.status;
+        document.getElementById("txBuyPrice").value = tx.buying_price || "";
+        document.getElementById("txBuyTotal").value = tx.buy_amount_with_tax || "";
+        document.getElementById("txSellPrice").value = tx.selling_price || "";
+        document.getElementById("txSellTotal").value = tx.sell_amount_after_tax || "";
+        document.getElementById("txPL").value = tx.profit_loss || "";
+        document.getElementById("txRemarks").value = tx.remarks || "";
+        document.getElementById("transactionModalLabel").innerText = "Edit Transaction";
+        txModal.show();
+    }
+
+    document.getElementById("transactionForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const id = document.getElementById("txId").value;
+        const parseF = (val) => val === "" ? null : parseFloat(val);
+        const payload = {
+            symbol: document.getElementById("txSymbol").value.toUpperCase(),
+            shares: parseInt(document.getElementById("txShares").value),
+            date: document.getElementById("txDate").value,
+            status: document.getElementById("txStatus").value,
+            buying_price: parseF(document.getElementById("txBuyPrice").value),
+            buy_amount_with_tax: parseF(document.getElementById("txBuyTotal").value),
+            selling_price: parseF(document.getElementById("txSellPrice").value),
+            sell_amount_after_tax: parseF(document.getElementById("txSellTotal").value),
+            profit_loss: parseF(document.getElementById("txPL").value),
+            remarks: document.getElementById("txRemarks").value
+        };
+
+        let result;
+        const alertDiv = document.getElementById("investmentsAlert");
+
+        if (id) {
+            result = await apiRequest(`/investments/stocks/${id}/`, "PATCH", payload);
+        } else {
+            result = await apiRequest("/investments/stocks/", "POST", payload);
+        }
+
+        if (result && !result.detail) {
+            txModal.hide();
+            alertDiv.innerHTML = `<div class="alert alert-success mt-2 py-2"><i class="bi bi-check-circle"></i> Transaction saved!</div>`;
+            setTimeout(() => alertDiv.innerHTML = "", 3000);
+            loadTransactions();
+        } else {
+            alertDiv.innerHTML = `<div class="alert alert-danger mt-2 py-2"><i class="bi bi-x"></i> Failed: ${JSON.stringify(result)}</div>`;
+        }
+    });
+
+    async function deleteTransaction(id) {
+        if (!confirm("Are you sure you want to delete this stock transaction?")) return;
+        await apiRequest(`/investments/stocks/${id}/`, "DELETE");
+        document.getElementById("investmentsAlert").innerHTML = `<div class="alert alert-warning mt-2 py-2"><i class="bi bi-info-circle"></i> Transaction deleted.</div>`;
+        loadTransactions();
+    }
+
+    function openAddInventoryModal() {
+        document.getElementById("inventoryForm").reset();
+        document.getElementById("invId").value = "";
+        document.getElementById("inventoryModalLabel").innerText = "Add Inventory Record";
+        invModal.show();
+    }
+
+    function openEditInventoryModal(inv) {
+        document.getElementById("invId").value = inv.id;
+        document.getElementById("invStock").value = inv.stock;
+        document.getElementById("invKitta").value = inv.no_of_kitta;
+        document.getElementById("inventoryModalLabel").innerText = "Edit Inventory Record";
+        invModal.show();
+    }
+
+    document.getElementById("inventoryForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const id = document.getElementById("invId").value;
+        const payload = {
+            stock: document.getElementById("invStock").value.toUpperCase(),
+            no_of_kitta: parseInt(document.getElementById("invKitta").value)
+        };
+
+        let result;
+        const alertDiv = document.getElementById("investmentsAlert");
+
+        if (id) {
+            result = await apiRequest(`/investments/inventory/${id}/`, "PATCH", payload);
+        } else {
+            result = await apiRequest("/investments/inventory/", "POST", payload);
+        }
+
+        if (result && !result.detail) {
+            invModal.hide();
+            alertDiv.innerHTML = `<div class="alert alert-success mt-2 py-2"><i class="bi bi-check-circle"></i> Inventory saved!</div>`;
+            setTimeout(() => alertDiv.innerHTML = "", 3000);
+            loadInventory();
+        } else {
+            alertDiv.innerHTML = `<div class="alert alert-danger mt-2 py-2"><i class="bi bi-x"></i> Failed: ${JSON.stringify(result)}</div>`;
+        }
+    });
+
+    async function deleteInventory(id) {
+        if (!confirm("Are you sure you want to delete this inventory record?")) return;
+        await apiRequest(`/investments/inventory/${id}/`, "DELETE");
+        document.getElementById("investmentsAlert").innerHTML = `<div class="alert alert-warning mt-2 py-2"><i class="bi bi-info-circle"></i> Inventory record deleted.</div>`;
+        loadInventory();
+    }
+</script>
+{% endblock %}

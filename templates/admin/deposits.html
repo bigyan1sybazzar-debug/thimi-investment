@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Deposits — Thimi Investment{% endblock %}
+{% block content %}
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+    <div class="container-fluid mt-4 pb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">💳 Deposits</h2>
+            <div class="d-flex gap-2 flex-wrap">
+                <select class="form-select form-select-sm w-auto" id="filterStatus">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <input type="number" class="form-control form-control-sm w-auto" id="filterMonth" placeholder="Month"
+                    min="1" max="12">
+                <input type="number" class="form-control form-control-sm w-auto" id="filterYear" placeholder="Year">
+                <button class="btn btn-sm btn-primary" onclick="loadDeposits()"><i class="bi bi-funnel"></i>
+                    Filter</button>
+                <button class="btn btn-sm btn-outline-success" onclick="exportDeposits()"><i
+                        class="bi bi-file-earmark-excel"></i> Export Excel</button>
+            </div>
+        </div>
+
+        <div id="depositsAlert"></div>
+
+        <div class="card shadow border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="depositsMainTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Member</th>
+                                <th>Amount (Rs.)</th>
+                                <th>Year</th>
+                                <th>Month</th>
+                                <th>Method</th>
+                                <th>Date</th>
+                                <th>Receipt</th>
+                                <th>Remarks</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="depositsTable">
+                            <tr>
+                                <td colspan="11" class="text-center text-muted py-4">Loading deposits…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'includes/footer.html' %}
+</div>
+
+<!-- Screenshot View Modal -->
+<div class="modal fade" id="screenshotModal" tabindex="-1" aria-labelledby="screenshotModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="screenshotModalLabel">📷 Payment Receipt Screenshot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="modalScreenshotImg" src="" class="img-fluid w-100" style="max-height:85vh;object-fit:contain;"
+                    alt="Payment receipt">
+            </div>
+            <div class="modal-footer border-0">
+                <a id="downloadScreenshotBtn" href="#" target="_blank" class="btn btn-primary btn-sm"><i
+                        class="bi bi-box-arrow-up-right"></i> Open Full Size</a>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Deposit Modal -->
+<div class="modal fade" id="editDepositModal" tabindex="-1" aria-labelledby="editDepositModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editDepositForm">
+                <input type="hidden" id="editDepositId">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDepositModalLabel">✏️ Edit Deposit Entry</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="editModalAlert"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Amount (Rs.)</label>
+                            <input type="number" class="form-control" id="editAmount" required min="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Year</label>
+                            <input type="number" class="form-control" id="editYear" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Month</label>
+                            <select class="form-select" id="editMonth" required>
+                                {% for m in "123456789101112" %}{% endfor %}
+                                <option value="1">Jan (1)</option>
+                                <option value="2">Feb (2)</option>
+                                <option value="3">Mar (3)</option>
+                                <option value="4">Apr (4)</option>
+                                <option value="5">May (5)</option>
+                                <option value="6">Jun (6)</option>
+                                <option value="7">Jul (7)</option>
+                                <option value="8">Aug (8)</option>
+                                <option value="9">Sep (9)</option>
+                                <option value="10">Oct (10)</option>
+                                <option value="11">Nov (11)</option>
+                                <option value="12">Dec (12)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Payment Method</label>
+                            <select class="form-select" id="editMethod">
+                                <option value="cash">Cash</option>
+                                <option value="esewa">eSewa</option>
+                                <option value="khalti">Khalti</option>
+                                <option value="bank">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Payment Date</label>
+                            <input type="date" class="form-control" id="editPaymentDate">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="editStatus">
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Remarks / Notes</label>
+                            <textarea class="form-control" id="editRemarks" rows="2"
+                                placeholder="Admin notes…"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-danger btn-sm me-auto" id="deleteDepositBtn">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="saveEditBtn">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    let screenshotModal, editModal;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        screenshotModal = new bootstrap.Modal(document.getElementById('screenshotModal'));
+        editModal = new bootstrap.Modal(document.getElementById('editDepositModal'));
+        loadDeposits();
+    });
+
+    async function loadDeposits() {
+        const status = document.getElementById("filterStatus").value;
+        const month = document.getElementById("filterMonth").value;
+        const year = document.getElementById("filterYear").value;
+        let url = "/deposits/admin/deposits/?";
+        if (status) url += `status=${status}&`;
+        if (month) url += `month=${month}&`;
+        if (year) url += `year=${year}&`;
+
+        const data = await apiRequest(url);
+        const tbody = document.getElementById("depositsTable");
+
+        if (!data) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center text-danger py-4">Failed to load. Check login.</td></tr>`;
+            return;
+        }
+        if (!data.length) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-4">No deposits found.</td></tr>`;
+            return;
+        }
+
+        const colourMap = { approved: "success", pending: "warning", rejected: "danger" };
+
+        tbody.innerHTML = data.map((d, i) => {
+            const ssBtn = d.screenshot_url
+                ? `<button class="btn btn-outline-info btn-sm px-2 py-0" onclick="viewScreenshot('${d.screenshot_url}')"><i class="bi bi-image"></i> View</button>`
+                : `<span class="text-muted small">No SS</span>`;
+
+            return `
+            <tr>
+                <td>${i + 1}</td>
+                <td><strong>${d.member_name || '—'}</strong><br><small class="text-muted">${d.member_id || ''}</small></td>
+                <td>Rs. ${parseFloat(d.amount).toLocaleString()}</td>
+                <td>${d.saving_year}</td>
+                <td>${d.saving_month}</td>
+                <td><span class="badge bg-light text-dark border text-capitalize">${d.payment_method}</span></td>
+                <td>${d.payment_date}</td>
+                <td>${ssBtn}</td>
+                <td class="small text-muted" style="max-width:160px;white-space:normal;">${d.remarks || '—'}</td>
+                <td><span class="badge bg-${colourMap[d.status] || 'secondary'}">${d.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick='openEditModal(${JSON.stringify(d)})' title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    ${d.status === 'pending' ? `
+                    <button class="btn btn-sm btn-success py-0 px-2 ms-1" onclick="handleDeposit(${d.id},'approve')" title="Approve">✔</button>
+                    <button class="btn btn-sm btn-danger py-0 px-2 ms-1" onclick="handleDeposit(${d.id},'reject')" title="Reject">✖</button>
+                    ` : ''}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function viewScreenshot(url) {
+        document.getElementById("modalScreenshotImg").src = url;
+        document.getElementById("downloadScreenshotBtn").href = url;
+        screenshotModal.show();
+    }
+
+    function openEditModal(d) {
+        document.getElementById("editDepositId").value = d.id;
+        document.getElementById("editAmount").value = Math.round(d.amount);
+        document.getElementById("editYear").value = d.saving_year;
+        document.getElementById("editMonth").value = d.saving_month;
+        document.getElementById("editMethod").value = d.payment_method;
+        document.getElementById("editPaymentDate").value = d.payment_date;
+        document.getElementById("editStatus").value = d.status;
+        document.getElementById("editRemarks").value = d.remarks || "";
+        document.getElementById("editModalAlert").innerHTML = "";
+        editModal.show();
+    }
+
+    document.getElementById("editDepositForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const id = document.getElementById("editDepositId").value;
+        const alertDiv = document.getElementById("editModalAlert");
+        const btn = document.getElementById("saveEditBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Saving...`;
+
+        const payload = {
+            amount: parseFloat(document.getElementById("editAmount").value),
+            saving_year: parseInt(document.getElementById("editYear").value),
+            saving_month: parseInt(document.getElementById("editMonth").value),
+            payment_method: document.getElementById("editMethod").value,
+            payment_date: document.getElementById("editPaymentDate").value,
+            status: document.getElementById("editStatus").value,
+            remarks: document.getElementById("editRemarks").value,
+        };
+
+        const result = await apiRequest(`/deposits/admin/deposits/${id}/`, "PATCH", payload);
+
+        if (result && result.id) {
+            alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Saved successfully!</div>`;
+            setTimeout(() => {
+                editModal.hide();
+                loadDeposits();
+            }, 1200);
+        } else {
+            alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x"></i> Failed: ${JSON.stringify(result)}</div>`;
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-save"></i> Save Changes`;
+    });
+
+    document.getElementById("deleteDepositBtn").addEventListener("click", async function () {
+        const id = document.getElementById("editDepositId").value;
+        if (!confirm("⚠️ Are you sure you want to permanently DELETE this deposit record? This cannot be undone.")) return;
+
+        const res = await fetch(`/api/deposits/admin/deposits/${id}/`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
+        });
+
+        const alertDiv = document.getElementById("depositsAlert");
+        if (res.status === 204 || res.ok) {
+            editModal.hide();
+            alertDiv.innerHTML = `<div class="alert alert-warning py-2"><i class="bi bi-trash"></i> Deposit record deleted.</div>`;
+            setTimeout(() => alertDiv.innerHTML = "", 3000);
+            loadDeposits();
+        } else {
+            document.getElementById("editModalAlert").innerHTML = `<div class="alert alert-danger py-2">Delete failed.</div>`;
+        }
+    });
+
+    async function handleDeposit(id, action) {
+        if (!confirm(`Are you sure you want to ${action} this deposit?`)) return;
+        await apiRequest(`/deposits/admin/deposits/${id}/${action}/`, "PUT");
+        loadDeposits();
+    }
+
+    function exportDeposits() {
+        const table = document.getElementById("depositsMainTable");
+        if (!table) return;
+        const rows = table.querySelectorAll("tbody tr");
+        const csv = [["S.No", "Member", "Amount (Rs.)", "Year", "Month", "Payment Method", "Date", "Remarks", "Status"]];
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("td");
+            if (cells.length >= 10) {
+                const sNo = cells[0].innerText.trim();
+                const member = cells[1].innerText.trim().replace(/\n/g, ' ');
+                const amount = cells[2].innerText.replace(/Rs\.\s*/g, "").replace(/,/g, "").trim();
+                const year = cells[3].innerText.trim();
+                const month = cells[4].innerText.trim();
+                const method = cells[5].innerText.trim();
+                const date = cells[6].innerText.trim();
+                const remarks = cells[8].innerText.trim();
+                const status = cells[9].innerText.trim();
+                csv.push([`"${sNo}"`, `"${member}"`, `"${amount}"`, `"${year}"`, `"${month}"`, `"${method}"`, `"${date}"`, `"${remarks}"`, `"${status}"`]);
+            }
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "all_deposits.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}

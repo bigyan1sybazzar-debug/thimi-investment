@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Members — Thimi Investment{% endblock %}
+{% block content %}
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+    <div class="container-fluid mt-4 pb-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">👥 Members</h2>
+            <a href="/members/add/" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Add Member
+            </a>
+        </div>
+
+        <!-- Search bar -->
+        <div class="mb-3">
+            <input type="text" id="memberSearch" class="form-control" placeholder="🔍 Search by name or email…"
+                oninput="filterMembers()">
+        </div>
+
+        <div class="card shadow border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberTable">
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">Loading members…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'includes/footer.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script src="{% static 'js/members.js' %}"></script>
+<script>
+    let allMembers = [];
+
+    // Patch members.js to store data globally after load
+    const origOnload = window.onload;
+    window.onload = async function () {
+        const data = await apiRequest("/members/");
+        if (!data) return;
+        allMembers = data;
+        renderMembers(data);
+    };
+
+    function renderMembers(data) {
+        const table = document.getElementById("memberTable");
+        if (!data.length) {
+            table.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">No members found.</td></tr>`;
+            return;
+        }
+        table.innerHTML = data.map(member => {
+            const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ") || member.username;
+            return `
+        <tr>
+            <td><span class="badge bg-secondary">${member.member_id}</span></td>
+            <td><strong>${fullName}</strong><br><small class="text-muted">${member.username}</small></td>
+            <td class="small">${member.email || "—"}</td>
+            <td>${member.phone || "—"}</td>
+            <td class="small text-muted">${member.address || "—"}</td>
+            <td>
+                ${member.is_active_member
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-danger">Inactive</span>'}
+            </td>
+            <td>
+                <a href="/members/profile/${member.id}/" class="btn btn-sm btn-outline-info" title="View Profile">
+                    <i class="bi bi-eye"></i>
+                </a>
+                <a href="/members/edit/${member.id}/" class="btn btn-sm btn-outline-primary ms-1" title="Edit">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+            </td>
+        </tr>`;
+        }).join('');
+    }
+
+    function filterMembers() {
+        const q = document.getElementById("memberSearch").value.toLowerCase();
+        const filtered = allMembers.filter(m => {
+            const name = [m.first_name, m.last_name, m.username].join(" ").toLowerCase();
+            return name.includes(q) || (m.email || "").toLowerCase().includes(q);
+        });
+        renderMembers(filtered);
+    }
+</script>
+{% endblock %}

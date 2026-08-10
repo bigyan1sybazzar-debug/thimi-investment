@@ -1,0 +1,752 @@
+{% extends "base.html" %}
+
+{% block title %}Member Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Investment Group</h2>
+            <p class="text-muted mb-0" id="welcomeText">
+                Welcome
+            </p>
+        </div>
+
+        <div>
+            <a href="/admin-dashboard/" class="btn btn-primary me-2" id="goToAdminBtn" style="display: none;">
+                <i class="bi bi-shield-lock"></i> Go to Admin
+            </a>
+            <button class="btn btn-outline-danger" onclick="logout()">
+                Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card shadow-sm border-success">
+
+                <div class="card-body">
+
+                    <h6>Total Savings</h6>
+
+                    <h2 class="text-success">
+                        Rs.
+                        <span id="approvedAmount">0</span>
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card shadow-sm border-warning">
+
+                <div class="card-body">
+
+                    <h6>Pending Verification</h6>
+
+                    <h2 class="text-warning">
+                        Rs.
+                        <span id="pendingAmount">0</span>
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card shadow-sm border-primary">
+
+                <div class="card-body">
+
+                    <h6>Status</h6>
+
+                    <h4 id="currentStatus">
+                        Not Claimed
+                    </h4>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Payment Deadline Alert Banner -->
+    <div id="paymentDeadlineBanner" class="mt-4"></div>
+
+    <!-- QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">📷 Payment QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div id="qrModalLoading" class="text-muted mb-3"><span
+                            class="spinner-border spinner-border-sm me-2"></span>Loading QR...</div>
+                    <img id="qrModalImg" src="" alt="Payment QR"
+                        style="display:none;max-width:280px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.12);">
+                    <div id="qrModalNoQr" style="display:none;" class="text-muted">
+                        <i class="bi bi-qr-code fs-1 d-block mb-2"></i>
+                        No payment QR has been set by admin yet.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center">
+                    <a id="qrDownloadBtn" href="#" download="payment_qr.png" class="btn btn-success px-4"
+                        style="display:none;">
+                        <i class="bi bi-download me-2"></i> Download QR
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Payment History</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="exportPaymentHistory()">
+                    <i class="bi bi-file-earmark-excel"></i> Export Excel
+                </button>
+                <button class="btn btn-outline-dark btn-sm" onclick="openQrModal()">
+                    <i class="bi bi-qr-code-scan"></i> View QR
+                </button>
+                <a href="/member/claim-payment/" class="btn btn-success btn-sm">
+                    Claim Payment
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="paymentTable">
+
+                    <tr>
+
+                        <td colspan="5" class="text-center">
+
+                            Loading...
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- Group Investments & Loans Summary -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-light">
+            <ul class="nav nav-tabs card-header-tabs" id="investTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold text-success" id="loans-tab" data-bs-toggle="tab"
+                        data-bs-target="#loansTab" type="button" role="tab" aria-controls="loansTab"
+                        aria-selected="true">Loans Summary</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold text-primary" id="stocks-tab" data-bs-toggle="tab"
+                        data-bs-target="#stocksTab" type="button" role="tab" aria-controls="stocksTab"
+                        aria-selected="false">Stock Holdings</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold text-info" id="hydro-tab" data-bs-toggle="tab"
+                        data-bs-target="#hydroTab" type="button" role="tab" aria-controls="hydroTab"
+                        aria-selected="false">Hydropower Plan</button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body tab-content" id="investTabsContent">
+            <!-- Loans -->
+            <div class="tab-pane fade show active" id="loansTab" role="tabpanel" aria-labelledby="loans-tab">
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Total Loan Principal</span>
+                            <h4 class="text-success mt-1 fw-bold" id="groupTotalPrincipal">Rs. 0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Interest Collected so far</span>
+                            <h4 class="text-success mt-1 fw-bold" id="groupTotalInterest">Rs. 0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Annual Interest Rate</span>
+                            <h4 class="text-success mt-1 fw-bold">12% p.a.</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Loan Ledger</h6>
+                    <button class="btn btn-sm btn-outline-success border" onclick="openClaimLoanModal()">
+                        <i class="bi bi-cash-coin"></i> Request / Claim Loan
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>S.No.</th>
+                                <th>Name</th>
+                                <th>Principal Amount</th>
+                                <th>Disbursement Date</th>
+                                <th>Interest Paid</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberLoansTable">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading loans...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stocks -->
+            <div class="tab-pane fade" id="stocksTab" role="tabpanel" aria-labelledby="stocks-tab">
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Total Capital Invested in Stocks</span>
+                            <h4 class="text-primary mt-1 fw-bold" id="groupTotalShareInvested">Rs. 0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Current Stock Market Value</span>
+                            <h4 class="text-primary mt-1 fw-bold" id="groupTotalShareValue">Rs. 0</h4>
+                        </div>
+                    </div>
+                </div>
+                <h6>Active Share Inventory</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Stock Symbol</th>
+                                <th>Kitta (Shares Count)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberSharesTable">
+                            <tr>
+                                <td colspan="2" class="text-center">Loading stock inventory...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Hydropower Plan -->
+            <div class="tab-pane fade" id="hydroTab" role="tabpanel" aria-labelledby="hydro-tab">
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Hydropower Capital Pool</span>
+                            <h4 class="text-info mt-1 fw-bold" id="groupHydroTotal">Rs. 0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="border rounded p-3 text-center bg-light">
+                            <span class="text-muted small d-block">Plan Verdict</span>
+                            <h4 class="text-info mt-1 fw-bold">Dismissed Plan</h4>
+                        </div>
+                    </div>
+                </div>
+                <h6>Member Contributions</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Member Name</th>
+                                <th>Amount Deposited</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberHydroTable">
+                            <tr>
+                                <td colspan="2" class="text-center">Loading hydropower contributions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Request / Claim Loan Modal -->
+    <div class="modal fade" id="claimLoanModal" tabindex="-1" aria-labelledby="claimLoanModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="claimLoanForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="claimLoanModalLabel">💰 Request / Claim Loan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modalLoanAlert"></div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Requested Loan Amount (Rs.) <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="modalLoanAmount" required min="1000"
+                                placeholder="100000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Note / Remarks (Reason for loan, collateral,
+                                etc.)</label>
+                            <textarea class="form-control" id="modalLoanRemarks" rows="3"
+                                placeholder="I need a short term loan for..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm ms-auto" id="submitLoanBtn">Submit
+                            Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% endblock %}
+
+    {% block extra_js %}
+
+    <script>
+
+        const token = localStorage.getItem("access");
+
+        if (!token) {
+            window.location.href = "/";
+        }
+
+        function logout() {
+
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+
+            window.location.href = "/";
+
+        }
+
+        fetch("/api/deposits/dashboard/", {
+
+            headers: {
+
+                Authorization: "Bearer " + token
+
+            }
+
+        })
+
+            .then(response => {
+
+                if (response.status === 401) {
+
+                    logout();
+
+                }
+
+                return response.json();
+
+            })
+
+            .then(data => {
+
+                document.getElementById("welcomeText").innerHTML =
+                    "Welcome, " + data.member.username;
+
+                document.getElementById("approvedAmount").innerHTML =
+                    data.summary.approved_deposit;
+
+                document.getElementById("pendingAmount").innerHTML =
+                    data.summary.pending_deposit;
+
+                // Render deadline banner
+                const member = data.member;
+                const deposits = data.deposits;
+
+                const curYear = new Date().getFullYear();
+                const curMonth = new Date().getMonth() + 1;
+
+                const hasPaid = deposits.some(dep => {
+                    return dep.saving_year === curYear &&
+                        dep.saving_month === curMonth &&
+                        (dep.status === 'approved' || dep.status === 'pending');
+                });
+
+                const bannerEl = document.getElementById("paymentDeadlineBanner");
+                if (bannerEl) {
+                    if (member.remaining_days === undefined || member.remaining_days === null || member.remaining_days <= 0) {
+                        bannerEl.innerHTML = `
+                            <div class="card border-0 shadow-sm bg-light">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div class="me-3 fs-4 text-secondary">
+                                        <i class="bi bi-info-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark">No Active Payment Period</h6>
+                                        <small class="text-muted">The administrator has not set an active payment period or deadline yet.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (hasPaid) {
+                        let paidDep = deposits.find(dep => dep.saving_year === curYear && dep.saving_month === curMonth);
+                        let depStatus = paidDep ? paidDep.status : '';
+                        bannerEl.innerHTML = `
+                            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);">
+                                <div class="card-body d-flex align-items-center p-3 text-dark">
+                                    <div class="me-3 fs-3 text-success">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">Payment &amp; Claim Status: Complete</h6>
+                                        <small>Your monthly deposit claim for <strong>${curMonth}/${curYear}</strong> is submitted and is currently: <span class="badge bg-success">${depStatus}</span>. Thank you!</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Calculate elapsed and remaining days
+                        const today = new Date();
+                        const todayStr = today.getFullYear() + "-" +
+                            String(today.getMonth() + 1).padStart(2, '0') + "-" +
+                            String(today.getDate()).padStart(2, '0');
+
+                        let daysElapsed = 0;
+                        if (member.remaining_days_updated_at) {
+                            const start = new Date(member.remaining_days_updated_at);
+                            const end = new Date(todayStr);
+                            start.setHours(0, 0, 0, 0);
+                            end.setHours(0, 0, 0, 0);
+                            const diffTime = end.getTime() - start.getTime();
+                            daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            if (daysElapsed < 0) daysElapsed = 0;
+                        }
+
+                        const initialDays = member.remaining_days || 0;
+                        const daysLeft = Math.max(0, initialDays - daysElapsed);
+
+                        // Decide fine and theme based on elapsed days
+                        let fine = 0;
+                        let fineMsg = "";
+                        let bgGradient = "";
+                        let iconHtml = "";
+                        let borderStyle = "";
+                        let textClass = "";
+
+                        if (daysElapsed <= 5) {
+                            fine = 0;
+                            fineMsg = "Rs. 0 (Within 5-day grace period)";
+                            bgGradient = "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)";
+                            iconHtml = '<i class="bi bi-clock-history text-info-emphasis"></i>';
+                            borderStyle = "border: 1px solid #4dd0e1;";
+                            textClass = "text-dark";
+                        } else if (daysElapsed > 5 && daysElapsed <= 10) {
+                            fine = 200;
+                            fineMsg = "Rs. 200 (Day 6 to 10 of payment period)";
+                            bgGradient = "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)";
+                            iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
+                            borderStyle = "border: 1px solid #ffb74d;";
+                            textClass = "text-dark";
+                        } else {
+                            fine = 100;
+                            fineMsg = "Rs. 100 (Unpaid after 10 days)";
+                            bgGradient = "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)";
+                            iconHtml = '<i class="bi bi-exclamation-octagon-fill text-danger"></i>';
+                            borderStyle = "border: 1px solid #e57373;";
+                            textClass = "text-dark";
+                        }
+
+                        bannerEl.innerHTML = `
+                            <div class="card border-0 shadow-sm" style="${borderStyle} background: ${bgGradient};">
+                                <div class="card-body p-4 ${textClass}">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto fs-1">
+                                            ${iconHtml}
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                                                <div>
+                                                    <h5 class="mb-1 fw-bold">⌛ Action Required: Submit Payment / Claim</h5>
+                                                    <p class="mb-2">Your payment/claim for <strong>Month: ${curMonth}, Year: ${curYear}</strong> is currently pending.</p>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-dark fs-6 py-2 px-3 mb-1">${daysLeft} Days Left</span>
+                                                    <div><small class="text-muted">Deadline period: ${initialDays} days</small></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row mt-2 g-2">
+                                                <div class="col-md-6 border-end">
+                                                    <span class="d-block text-muted small uppercase fw-bold">Payment started on</span>
+                                                    <span class="fs-6 fw-bold">${member.remaining_days_updated_at || '—'}</span>
+                                                    <span class="text-muted small">(${daysElapsed} days elapsed)</span>
+                                                </div>
+                                                <div class="col-md-6 ps-md-3">
+                                                    <span class="d-block text-muted small uppercase fw-bold">Current Fine Amount</span>
+                                                    <span class="fs-6 fw-bold text-danger">${fineMsg}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-3 p-2 bg-white bg-opacity-50 rounded small">
+                                                <span class="fw-bold">📌 Rules Info:</span>
+                                                First 5 days: <strong>Rs. 0 fine</strong> | Days 6-10: <strong>Rs. 200 fine</strong> | After 10 days: <strong>Rs. 100 fine</strong>.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                let table = document.getElementById("paymentTable");
+
+                table.innerHTML = "";
+
+                if (data.deposits.length === 0) {
+
+                    table.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center">
+                No payment records found.
+            </td>
+        </tr>
+        `;
+
+                    return;
+
+                }
+
+                document.getElementById("currentStatus").innerHTML =
+                    data.deposits[0].status;
+
+                data.deposits.forEach(function (item) {
+
+                    table.innerHTML += `
+        <tr>
+            <td>${item.saving_year}</td>
+            <td>${item.saving_month}</td>
+            <td>Rs. ${item.amount}</td>
+            <td>
+                <span class="badge bg-${item.status == 'approved' ? 'success'
+                            : item.status == 'pending' ? 'warning'
+                                : 'danger'
+                        }">
+                ${item.status}
+                </span>
+            </td>
+            <td>${item.payment_date}</td>
+        </tr>
+        `;
+
+                });
+
+                // Show admin redirect button if user is staff/superuser
+                if (data.member.is_staff || data.member.is_superuser) {
+                    document.getElementById("goToAdminBtn").style.display = "inline-block";
+                }
+
+                // Populate Group Investments & Loans from Thimi Data
+                const thimi = data.thimi_data;
+                if (thimi) {
+                    // Loans Summary & Table
+                    document.getElementById("groupTotalPrincipal").innerText = "Rs. " + thimi.loans.total_principal.toLocaleString();
+                    document.getElementById("groupTotalInterest").innerText = "Rs. " + thimi.loans.total_interest_paid.toLocaleString();
+
+                    let loansHtml = "";
+                    thimi.loans.records.forEach(record => {
+                        loansHtml += `
+                        <tr>
+                            <td>${record.s_no}</td>
+                            <td>${record.name}</td>
+                            <td>Rs. ${record.amount.toLocaleString()}</td>
+                            <td>${record.disbursement_date}</td>
+                            <td>Rs. ${record.interest_paid.toLocaleString()}</td>
+                            <td><span class="badge bg-${record.status === 'Closed' ? 'secondary' : 'success'}">${record.status}</span></td>
+                        </tr>`;
+                    });
+                    document.getElementById("memberLoansTable").innerHTML = loansHtml;
+
+                    // Stocks Holdings Summary & Table
+                    document.getElementById("groupTotalShareInvested").innerText = "Rs. " + thimi.financial_summary.total_amount_invested_on_shares.toLocaleString();
+                    document.getElementById("groupTotalShareValue").innerText = "Rs. " + thimi.financial_summary.share_value.toLocaleString();
+
+                    let stockHtml = "";
+                    thimi.share_details.shares_in_stock.forEach(share => {
+                        stockHtml += `
+                        <tr>
+                            <td><strong>${share.stock}</strong></td>
+                            <td>${share.no_of_kitta}</td>
+                        </tr>`;
+                    });
+                    document.getElementById("memberSharesTable").innerHTML = stockHtml;
+
+                    // Hydropower Plan Summary & Table
+                    document.getElementById("groupHydroTotal").innerText = "Rs. " + thimi.hydropower_plan.total.toLocaleString();
+                    let hydroHtml = "";
+                    thimi.hydropower_plan.deposits.forEach(dep => {
+                        hydroHtml += `
+                        <tr>
+                            <td>${dep.name}</td>
+                            <td>${dep.amount !== null ? 'Rs. ' + dep.amount.toLocaleString() : '<span class="text-secondary small">Not contributed</span>'}</td>
+                        </tr>`;
+                    });
+                    document.getElementById("memberHydroTable").innerHTML = hydroHtml;
+                }
+
+            })
+
+            .catch(function (error) {
+
+                console.log(error);
+
+            });
+
+        function exportPaymentHistory() {
+            const table = document.getElementById("paymentTable");
+            if (!table) return;
+            const rows = table.querySelectorAll("tr");
+            const csv = [["Year", "Month", "Amount", "Status", "Date"]];
+            rows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                if (cells.length >= 5) {
+                    const year = cells[0].innerText.trim();
+                    const month = cells[1].innerText.trim();
+                    // clean up Rs amount
+                    const amt = cells[2].innerText.replace(/Rs\.\s*/g, "").replace(/,/g, "").trim();
+                    const status = cells[3].innerText.trim();
+                    const date = cells[4].innerText.trim();
+                    csv.push([`"${year}"`, `"${month}"`, `"${amt}"`, `"${status}"`, `"${date}"`]);
+                }
+            });
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "payment_history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        let loanModal;
+        document.addEventListener("DOMContentLoaded", () => {
+            const modalEl = document.getElementById('claimLoanModal');
+            if (modalEl) {
+                loanModal = new bootstrap.Modal(modalEl);
+            }
+        });
+
+        function openClaimLoanModal() {
+            document.getElementById("claimLoanForm").reset();
+            document.getElementById("modalLoanAlert").innerHTML = "";
+            if (loanModal) loanModal.show();
+        }
+
+        document.getElementById("claimLoanForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById("submitLoanBtn");
+            const alertDiv = document.getElementById("modalLoanAlert");
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
+
+            const payload = {
+                amount: parseFloat(document.getElementById("modalLoanAmount").value),
+                remarks: document.getElementById("modalLoanRemarks").value,
+            };
+
+            const data = await apiRequest("/loans/", "POST", payload);
+
+            if (data && !data.detail) {
+                alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Loan request submitted successfully! Pending admin approval.</div>`;
+                setTimeout(() => {
+                    if (loanModal) loanModal.hide();
+                    location.reload();
+                }, 2000);
+            } else {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x"></i> Failed: ${data.detail || JSON.stringify(data)}</div>`;
+            }
+            btn.disabled = false;
+            btn.innerHTML = "Submit Request";
+        });
+
+        // QR Modal
+        let qrModalInstance;
+        document.addEventListener("DOMContentLoaded", () => {
+            const qrEl = document.getElementById("qrModal");
+            if (qrEl) qrModalInstance = new bootstrap.Modal(qrEl);
+        });
+
+        async function openQrModal() {
+            document.getElementById("qrModalLoading").style.display = "block";
+            document.getElementById("qrModalImg").style.display = "none";
+            document.getElementById("qrModalNoQr").style.display = "none";
+            document.getElementById("qrDownloadBtn").style.display = "none";
+            if (qrModalInstance) qrModalInstance.show();
+
+            const token = localStorage.getItem("access");
+            try {
+                const res = await fetch("/api/deposits/settings/", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const data = await res.json();
+                document.getElementById("qrModalLoading").style.display = "none";
+                if (data.qr_code_url) {
+                    const img = document.getElementById("qrModalImg");
+                    img.src = data.qr_code_url;
+                    img.style.display = "block";
+                    const dl = document.getElementById("qrDownloadBtn");
+                    dl.href = data.qr_code_url;
+                    dl.style.display = "inline-block";
+                } else {
+                    document.getElementById("qrModalNoQr").style.display = "block";
+                }
+            } catch (err) {
+                document.getElementById("qrModalLoading").style.display = "none";
+                document.getElementById("qrModalNoQr").style.display = "block";
+            }
+        }
+    </script>
+
+    {% endblock %}

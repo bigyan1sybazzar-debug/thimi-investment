@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Notifications — Thimi Investment{% endblock %}
+{% block content %}
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+    <div class="container-fluid mt-4 pb-5">
+        <h2 class="mb-4">🔔 Notifications</h2>
+        <div class="card border-0 shadow">
+            <div class="card-body">
+                <div class="alert alert-warning d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
+                    <div>
+                        <strong>Pending Deposit Approvals</strong> — Some members have submitted deposits awaiting
+                        review.
+                        <a href="/deposits/" class="btn btn-sm btn-warning ms-2">Review Now</a>
+                    </div>
+                </div>
+                <div class="alert alert-info d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                    <div>
+                        <strong>Active Loan:</strong> Devendra Sharma's loan of Rs. 1,00,000 (disbursed 2025/03/22) is
+                        currently active.
+                    </div>
+                </div>
+                <div class="alert alert-danger d-flex align-items-center">
+                    <i class="bi bi-x-circle-fill me-2 fs-4"></i>
+                    <div>
+                        <strong>Stock Alert:</strong> Total share portfolio loss stands at <strong>Rs.
+                            1,17,128.7</strong> as of 06/05/2026.
+                    </div>
+                </div>
+                <div class="alert alert-secondary d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill me-2 fs-4"></i>
+                    <div>
+                        <strong>Hydropower Plan</strong> has been dismissed. No further action required.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'includes/footer.html' %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+{% endblock %}

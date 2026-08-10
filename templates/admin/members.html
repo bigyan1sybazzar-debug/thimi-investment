@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Members
+{% endblock %}
+
+{% block content %}
+
+{% include 'includes/sidebar.html' %}
+<div class="main-content">
+
+    {% include 'includes/navbar.html' %}
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Members</h2>
+
+            <input
+                type="text"
+                id="searchMember"
+                class="form-control w-25"
+                placeholder="Search Member">
+        </div>
+
+        <table class="table table-bordered table-hover">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Member ID</th>
+
+                    <th>Username</th>
+
+                    <th>Phone</th>
+
+                    <th>Status</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="memberTable">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script src="{% static 'js/members.js' %}"></script>
+{% endblock %}

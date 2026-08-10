@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Claim Payment — Thimi Investment{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:680px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">📤 Claim Payment</h2>
+            <p class="text-muted small mb-0">Submit your monthly deposit with a screenshot proof</p>
+        </div>
+        <div>
+            <a href="/member/dashboard/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+            <button class="btn btn-outline-danger btn-sm ms-2" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="claimAlert"></div>
+
+    <div class="card border-0 shadow">
+        <div class="card-body p-4">
+            <form id="claimForm" enctype="multipart/form-data">
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Amount (Rs.) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rs.</span>
+                            <input type="number" class="form-control" id="amount" required placeholder="5000" min="1">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Year <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="saving_year" required placeholder="2025">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Month <span class="text-danger">*</span></label>
+                        <select class="form-select" id="saving_month" required>
+                            <option value="">Month</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                            <option>8</option>
+                            <option>9</option>
+                            <option>10</option>
+                            <option>11</option>
+                            <option>12</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_method" required>
+                            <option value="cash">Cash</option>
+                            <option value="esewa">eSewa</option>
+                            <option value="khalti">Khalti</option>
+                            <option value="bank">Bank Transfer</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Payment Date</label>
+                        <input type="date" class="form-control" id="payment_date">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Payment Screenshot / Receipt</label>
+                        <input type="file" class="form-control" id="screenshot" accept="image/*">
+                        <small class="text-muted">Upload a photo or screenshot of the payment (optional but
+                            recommended)</small>
+                        <div id="screenshotPreview" class="mt-2"></div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Remarks</label>
+                        <textarea class="form-control" id="remarks" rows="2"
+                            placeholder="Any additional note…"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary px-5" id="submitBtn">
+                        <i class="bi bi-send"></i> Submit Claim
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    // Pre-fill today's date
+    document.getElementById("payment_date").value = new Date().toISOString().split("T")[0];
+    // Pre-fill current year
+    document.getElementById("saving_year").value = new Date().getFullYear();
+    // Pre-fill current month
+    document.getElementById("saving_month").value = new Date().getMonth() + 1;
+
+    // Screenshot preview
+    document.getElementById("screenshot").addEventListener("change", function () {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById("screenshotPreview").innerHTML = `
+            <img src="${e.target.result}" class="img-thumbnail mt-2" style="max-height:200px;" alt="Preview">`;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById("claimForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const token = localStorage.getItem("access");
+        if (!token) { window.location.href = "/"; return; }
+
+        const alertDiv = document.getElementById("claimAlert");
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting…`;
+
+        const formData = new FormData();
+        formData.append("amount", document.getElementById("amount").value);
+        formData.append("saving_year", document.getElementById("saving_year").value);
+        formData.append("saving_month", document.getElementById("saving_month").value);
+        formData.append("payment_method", document.getElementById("payment_method").value);
+        formData.append("payment_date", document.getElementById("payment_date").value);
+        formData.append("remarks", document.getElementById("remarks").value);
+
+        const screenshotFile = document.getElementById("screenshot").files[0];
+        if (screenshotFile) {
+            formData.append("screenshot", screenshotFile);
+        }
+
+        try {
+            const response = await fetch("/api/deposits/", {
+                method: "POST",
+                headers: { Authorization: "Bearer " + token },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alertDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>Payment claim submitted!</strong> It will be reviewed by the admin.
+                    <div class="mt-2">
+                        <a href="/member/dashboard/" class="btn btn-success btn-sm">Go to Dashboard</a>
+                    </div>
+                </div>`;
+                document.getElementById("claimForm").reset();
+                document.getElementById("screenshotPreview").innerHTML = "";
+            } else {
+                const errMsg = data.detail || JSON.stringify(data);
+                alertDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>${errMsg}</div>`;
+            }
+        } catch (err) {
+            alertDiv.innerHTML = `<div class="alert alert-danger">Connection error. Please try again.</div>`;
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-send"></i> Submit Claim`;
+    });
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = "/";
+    }
+</script>
+{% endblock %}
