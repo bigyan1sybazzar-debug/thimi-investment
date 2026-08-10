@@ -4,40 +4,42 @@
 
 {% block content %}
 
-<div class="container py-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2>Investment Group</h2>
-            <p class="text-muted mb-0" id="welcomeText">
-                Welcome
-            </p>
-        </div>
-
-        <div>
-            <a href="/admin-dashboard/" class="btn btn-primary me-2" id="goToAdminBtn" style="display: none;">
-                <i class="bi bi-shield-lock"></i> Go to Admin
-            </a>
-            <button class="btn btn-outline-danger" onclick="logout()">
-                Logout
-            </button>
-        </div>
+<!-- Sticky top header for member dashboard -->
+<header class="member-header">
+    <div>
+        <h5 class="mb-0 fw-bold" style="font-size:1rem;">
+            <i class="bi bi-bank me-1 text-primary"></i> Thimi Investment
+        </h5>
+        <small class="text-muted" id="welcomeText">Welcome</small>
     </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="/admin-dashboard/" class="btn btn-primary btn-sm" id="goToAdminBtn" style="display:none;">
+            <i class="bi bi-shield-lock"></i>
+            <span class="d-none d-sm-inline ms-1">Admin</span>
+        </a>
+        <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="d-none d-sm-inline ms-1">Logout</span>
+        </button>
+    </div>
+</header>
 
-    <div class="row">
+<div class="container-fluid py-3 px-3">
 
-        <div class="col-md-4 mb-3">
+    <div class="row g-3 mb-3">
 
-            <div class="card shadow-sm border-success">
+        <div class="col-md-4 col-6">
+
+            <div class="card shadow-sm border-success h-100">
 
                 <div class="card-body">
 
-                    <h6>Total Savings</h6>
+                    <h6 class="text-muted small text-uppercase fw-semibold">Total Savings</h6>
 
-                    <h2 class="text-success">
+                    <h3 class="text-success mb-0 mt-1">
                         Rs.
                         <span id="approvedAmount">0</span>
-                    </h2>
+                    </h3>
 
                 </div>
 
@@ -45,18 +47,18 @@
 
         </div>
 
-        <div class="col-md-4 mb-3">
+        <div class="col-md-4 col-6">
 
-            <div class="card shadow-sm border-warning">
+            <div class="card shadow-sm border-warning h-100">
 
                 <div class="card-body">
 
-                    <h6>Pending Verification</h6>
+                    <h6 class="text-muted small text-uppercase fw-semibold">Pending</h6>
 
-                    <h2 class="text-warning">
+                    <h3 class="text-warning mb-0 mt-1">
                         Rs.
                         <span id="pendingAmount">0</span>
-                    </h2>
+                    </h3>
 
                 </div>
 
@@ -64,15 +66,15 @@
 
         </div>
 
-        <div class="col-md-4 mb-3">
+        <div class="col-md-4 col-12">
 
-            <div class="card shadow-sm border-primary">
+            <div class="card shadow-sm border-primary h-100">
 
                 <div class="card-body">
 
-                    <h6>Status</h6>
+                    <h6 class="text-muted small text-uppercase fw-semibold">Status</h6>
 
-                    <h4 id="currentStatus">
+                    <h4 id="currentStatus" class="mb-0 mt-1">
                         Not Claimed
                     </h4>
 
