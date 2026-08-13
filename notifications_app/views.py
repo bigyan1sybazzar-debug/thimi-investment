@@ -209,6 +209,7 @@ class SendBroadcastEmailView(APIView):
                     return Response({'detail': 'Please provide recipient email address(es) for custom email target.'}, status=status.HTTP_400_BAD_REQUEST)
                 recipients = [e.strip() for e in custom_email.split(',') if e.strip() and '@' in e.strip()]
             else:
+                # 1. Check Member profiles
                 members = Member.objects.select_related('user').all()
                 if target_group == 'active':
                     members = members.filter(is_active_member=True)
@@ -218,8 +219,20 @@ class SendBroadcastEmailView(APIView):
                     if e and '@' in e:
                         recipients.append(e)
 
+                # 2. Check all User objects as fallback
+                users = User.objects.all()
+                if target_group == 'active':
+                    users = users.filter(is_active=True)
 
-            # Deduplicate
+                for u in users:
+                    u_email = (u.email or '').strip()
+                    u_user = (u.username or '').strip()
+                    if u_email and '@' in u_email:
+                        recipients.append(u_email)
+                    elif u_user and '@' in u_user:
+                        recipients.append(u_user)
+
+            # Deduplicate while preserving order
             recipients = list(dict.fromkeys(recipients))
 
             if not recipients:
@@ -241,12 +254,18 @@ class SendBroadcastEmailView(APIView):
                 except Exception as e:
                     failed.append({'email': email, 'error': str(e)})
 
+            recipient_summary = ", ".join(recipients[:5])
+            if len(recipients) > 5:
+                recipient_summary += f" and {len(recipients) - 5} more"
+
             return Response({
-                'message': f"Broadcast email sent to {sent_count} recipient(s).",
+                'message': f"Broadcast email sent to {sent_count} recipient(s) [{recipient_summary}].",
                 'sent_count': sent_count,
+                'recipients': recipients,
                 'failed_count': len(failed),
                 'failed_details': failed
             })
+
         except Exception as e:
             import traceback
             traceback.print_exc()
