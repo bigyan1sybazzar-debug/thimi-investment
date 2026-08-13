@@ -1,22 +1,23 @@
 from django.db import migrations
 
 MEMBER_EMAILS = {
-    'M0001': ('atlantic@thimi.com',     'atlantic@thimi.com'),
+    'M0001': ('atlanticbhandari@gmail.com', 'atlanticbhandari@gmail.com'),
     'M0002': ('bigyan.neupane6@gmail.com', 'bigyan.neupane6@gmail.com'),
     'M0003': ('bkalpa.khadka@gmail.com',  'bkalpa.khadka@gmail.com'),
     'M0004': ('bishalpandey32166@gmail.com', 'bishalpandey32166@gmail.com'),
-    'M0005': ('devendra@thimi.com',     'devendra@thimi.com'),
+    'M0005': ('sharmadevendra410@gmail.com', 'sharmadevendra410@gmail.com'),
     'M0006': ('dipin@thimi.com',        'dipin@thimi.com'),
     'M0007': ('nishan@thimi.com',       'nishan@thimi.com'),
     'M0008': ('mepaone3@gmail.com',     'mepaone3@gmail.com'),
     'M0009': ('prabin@thimi.com',       'prabin@thimi.com'),
     'M0010': ('Pradeeptandan40@gmail.com', 'Pradeeptandan40@gmail.com'),
-    'M0011': ('prashant@thimi.com',     'prashant@thimi.com'),
-    'M0012': ('pratik@thimi.com',       'pratik@thimi.com'),
+    'M0011': ('Prashantadhikari121@gmail.com', 'Prashantadhikari121@gmail.com'),
+    'M0012': ('adhikaripratik314@gmail.com', 'adhikaripratik314@gmail.com'),
     'M0013': ('sandeshupadhya1@gmail.com', 'sandeshupadhya1@gmail.com'),
     'M0014': ('vikram@thimi.com',       'vikram@thimi.com'),
     'M0015': ('dahalyuben@gmail.com',   'dahalyuben@gmail.com'),
 }
+
 
 
 def sync_emails(apps, schema_editor):
