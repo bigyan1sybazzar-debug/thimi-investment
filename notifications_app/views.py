@@ -6,7 +6,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from accounts.models import User, Member, GlobalSetting
 from deposits.models import Deposit
@@ -17,11 +17,16 @@ class SystemNotificationListView(APIView):
     """
     GET /api/notifications/messages/
     Returns list of system notifications and profile update alerts for Admin.
+    Supports ?unread_only=true
     """
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        notifs = SystemNotification.objects.all()[:50]
+        qs = SystemNotification.objects.all()
+        unread_only = request.query_params.get('unread_only', '').lower() == 'true'
+        if unread_only:
+            qs = qs.filter(is_read=False)
+        notifs = qs[:100]
         data = []
         for n in notifs:
             data.append({
@@ -33,7 +38,172 @@ class SystemNotificationListView(APIView):
                 "created_at": n.created_at.strftime("%Y-%m-%d %H:%M"),
                 "is_read": n.is_read,
             })
-        return Response(data)
+        unread_count = SystemNotification.objects.filter(is_read=False).count()
+        return Response({"results": data, "unread_count": unread_count})
+
+    def patch(self, request):
+        """PATCH /api/notifications/messages/ — mark a notification as read"""
+        notif_id = request.data.get("id")
+        mark_all = request.data.get("mark_all", False)
+        if mark_all:
+            SystemNotification.objects.filter(is_read=False).update(is_read=True)
+            return Response({"message": "All notifications marked as read."})
+        if notif_id:
+            try:
+                n = SystemNotification.objects.get(id=notif_id)
+                n.is_read = True
+                n.save()
+                return Response({"message": "Notification marked as read."})
+            except SystemNotification.DoesNotExist:
+                return Response({"detail": "Not found."}, status=404)
+        return Response({"detail": "Provide 'id' or 'mark_all: true'."}, status=400)
+
+
+class SendMemberMessageView(APIView):
+    """
+    POST /api/notifications/send-message/
+    Allows any authenticated member to send a message to the admin.
+    Stores the message as a SystemNotification with category='message'.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        subject = (request.data.get("subject") or "").strip()
+        body = (request.data.get("body") or "").strip()
+
+        if not subject or not body:
+            return Response(
+                {"detail": "Both subject and message body are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = request.user
+        # Get member ID if available
+        try:
+            member = Member.objects.get(user=user)
+            member_id = member.member_id
+        except Member.DoesNotExist:
+            member_id = user.username
+
+        full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+
+        SystemNotification.objects.create(
+            user=user,
+            title=f"📩 {subject} — from {full_name} ({member_id})",
+            message=body,
+            category="message",
+        )
+
+        return Response({"message": "Your message has been sent to the admin successfully."})
+
+
+class AdminReplyMessageView(APIView):
+    """
+    GET  /api/notifications/reply/<id>/  — fetch single notification detail
+    POST /api/notifications/reply/<id>/  — reply by email to the member
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, pk):
+        try:
+            n = SystemNotification.objects.get(id=pk)
+        except SystemNotification.DoesNotExist:
+            return Response({"detail": "Message not found."}, status=404)
+
+        # Get member email
+        reply_to_email = ""
+        full_name = ""
+        if n.user:
+            email = (n.user.email or "").strip()
+            username = (n.user.username or "").strip()
+            if email and "@" in email:
+                reply_to_email = email
+            elif username and "@" in username:
+                reply_to_email = username
+            full_name = f"{n.user.first_name} {n.user.last_name}".strip() or n.user.username
+
+        # Mark as read when admin opens it
+        if not n.is_read:
+            n.is_read = True
+            n.save()
+
+        return Response({
+            "id": n.id,
+            "title": n.title,
+            "message": n.message,
+            "category": n.category,
+            "user": n.user.username if n.user else None,
+            "reply_to_email": reply_to_email,
+            "member_name": full_name,
+            "created_at": n.created_at.strftime("%Y-%m-%d %H:%M"),
+        })
+
+    def post(self, request, pk):
+        try:
+            n = SystemNotification.objects.get(id=pk)
+        except SystemNotification.DoesNotExist:
+            return Response({"detail": "Message not found."}, status=404)
+
+        reply_text = (request.data.get("reply") or "").strip()
+        if not reply_text:
+            return Response({"detail": "Reply message cannot be empty."}, status=400)
+
+        # Resolve member email
+        reply_to_email = ""
+        member_name = "Member"
+        if n.user:
+            email = (n.user.email or "").strip()
+            username = (n.user.username or "").strip()
+            if email and "@" in email:
+                reply_to_email = email
+            elif username and "@" in username:
+                reply_to_email = username
+            member_name = f"{n.user.first_name} {n.user.last_name}".strip() or n.user.username
+
+        if not reply_to_email:
+            return Response({"detail": "No valid email found for this member."}, status=400)
+
+        subject = f"Re: {n.title} — Thimi Investment Group"
+
+        html_message = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;
+                    border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; background: #ffffff;">
+            <div style="border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#1e293b;">Thimi Investment Group</h2>
+                <p style="color:#64748b; font-size:13px; margin-top:4px;">Admin Reply</p>
+            </div>
+            <p style="font-size:15px; color:#1e293b;">Dear <strong>{member_name}</strong>,</p>
+            <div style="background:#f0f7ff; border-left:4px solid #2563eb; padding:16px; border-radius:4px; margin:16px 0;">
+                <p style="margin:0; white-space:pre-wrap; color:#1e40af;">{reply_text}</p>
+            </div>
+            <hr style="border:none; border-top:1px solid #e2e8f0; margin:20px 0;"/>
+            <p style="font-size:12px; color:#94a3b8; text-align:center; margin:0;">
+                — Thimi Investment Group Admin — Do not reply to this automated email.
+            </p>
+        </div>
+        """
+
+        try:
+            send_mail(
+                subject=subject,
+                message=reply_text,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[reply_to_email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response({"detail": f"Email delivery failed: {str(e)}"}, status=500)
+
+        # Mark as read
+        if not n.is_read:
+            n.is_read = True
+            n.save()
+
+        return Response({
+            "message": f"Reply sent successfully to {reply_to_email}.",
+            "sent_to": reply_to_email,
+        })
 
 
 

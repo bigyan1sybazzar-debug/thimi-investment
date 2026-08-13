@@ -138,28 +138,41 @@
             </div>
         </div>
 
-        <!-- ── System Activity & Member Profile Updates ── -->
+        <!-- ── Member Messages & Activity Notifications ── -->
         <div class="card border-0 shadow">
-            <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-person-gear text-primary me-2 fs-5"></i> Member Profile Updates & Admin
-                    Messages</span>
-                <button class="btn btn-sm btn-outline-primary" onclick="loadSystemMessages()"><i
-                        class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <div
+                class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span>
+                    <i class="bi bi-envelope-open-text text-primary me-2 fs-5"></i>
+                    Member Messages &amp; Activity Notifications
+                    <span id="unreadMsgBadge" class="badge bg-danger ms-2" style="display:none;">0</span>
+                </span>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-success" onclick="markAllRead()">
+                        <i class="bi bi-check2-all me-1"></i> Mark All Read
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadSystemMessages()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Category</th>
-                                <th>Message / Notification</th>
-                                <th>User</th>
-                                <th>Date & Time</th>
+                                <th style="width:110px;">Type</th>
+                                <th>Subject / Message</th>
+                                <th style="width:120px;">From</th>
+                                <th style="width:130px;">Date &amp; Time</th>
+                                <th style="width:80px;" class="text-center">Read</th>
                             </tr>
                         </thead>
                         <tbody id="systemMessagesTable">
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-3">Loading admin messages...</td>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading messages…
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -171,7 +184,60 @@
     </div>
     {% include 'includes/footer.html' %}
 </div>
+
+<!-- ── View & Reply Message Modal ────────────────────────────────── -->
+<div class="modal fade" id="viewReplyModal" tabindex="-1" aria-labelledby="viewReplyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header" style="background: linear-gradient(135deg,#1d3461,#2563eb); color:#fff;">
+                <h5 class="modal-title fw-bold" id="viewReplyModalLabel">
+                    <i class="bi bi-envelope-open me-2"></i>
+                    <span id="replyModalTitle">Message</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Message Info Bar -->
+                <div class="d-flex flex-wrap gap-3 mb-3 p-3 bg-light rounded border small">
+                    <div><span class="text-muted">From:</span> <strong id="replyFromName">—</strong></div>
+                    <div><span class="text-muted">Email:</span> <span id="replyFromEmail" class="text-primary">—</span>
+                    </div>
+                    <div><span class="text-muted">Received:</span> <span id="replyCreatedAt">—</span></div>
+                    <div><span id="replyCategoryBadge" class="badge bg-secondary">—</span></div>
+                </div>
+
+                <!-- Original Message -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small text-muted text-uppercase">Original Message</label>
+                    <div id="replyOriginalMsg" class="p-3 rounded border bg-white"
+                        style="white-space: pre-wrap; min-height: 80px; font-size: 0.97rem; line-height: 1.6;"></div>
+                </div>
+
+                <hr />
+
+                <!-- Reply Form -->
+                <div>
+                    <label class="form-label fw-semibold small text-muted text-uppercase">
+                        <i class="bi bi-reply me-1 text-primary"></i> Admin Reply (sent by email to member)
+                    </label>
+                    <div id="replyAlert"></div>
+                    <textarea class="form-control" id="adminReplyText" rows="5"
+                        placeholder="Type your reply here… It will be emailed directly to the member."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm ms-auto" id="sendReplyBtn" onclick="sendReply()">
+                    <i class="bi bi-send me-1"></i> Send Reply Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
+
 
 {% block extra_js %}
 <script src="{% static 'js/api.js' %}"></script>
@@ -183,25 +249,153 @@
 
     async function loadSystemMessages() {
         const table = document.getElementById("systemMessagesTable");
+        const badge = document.getElementById("unreadMsgBadge");
         if (!table) return;
         try {
-            const messages = await apiRequest("/notifications/messages/");
+            const resp = await apiRequest("/notifications/messages/");
+            // API now returns {results: [...], unread_count: N}
+            const messages = resp && resp.results ? resp.results : (Array.isArray(resp) ? resp : []);
+            const unreadCount = resp && resp.unread_count !== undefined ? resp.unread_count : 0;
+
+            // Update unread badge
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.style.display = "";
+                    badge.innerText = unreadCount + " unread";
+                } else {
+                    badge.style.display = "none";
+                }
+            }
+
             if (!messages || messages.length === 0) {
-                table.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No member updates or system messages yet.</td></tr>`;
+                table.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">No member messages or system notifications yet.</td></tr>`;
                 return;
             }
+
+            const catColors = {
+                'message': 'primary',
+                'profile_update': 'warning',
+                'deposit': 'success',
+                'loan': 'info',
+                'system': 'secondary'
+            };
+
             table.innerHTML = messages.map(m => `
-                <tr>
-                    <td><span class="badge bg-${m.category === 'profile_update' ? 'primary' : 'secondary'}">${m.category}</span></td>
-                    <td><strong>${m.title}</strong><br/><small class="text-muted">${m.message}</small></td>
-                    <td>${m.user || 'System'}</td>
+                <tr class="${!m.is_read ? 'table-warning' : ''}" style="cursor:pointer;" onclick="openReplyModal(${m.id})">
+                    <td>
+                        <span class="badge bg-${catColors[m.category] || 'secondary'} text-capitalize">
+                            ${m.category === 'message' ? '📩 Message' : m.category.replace('_', ' ')}
+                        </span>
+                    </td>
+                    <td>
+                        <strong>${m.title}</strong>
+                        <br/><small class="text-muted">${m.message.length > 80 ? m.message.substring(0, 80) + '...' : m.message}</small>
+                    </td>
+                    <td><small>${m.user || '<em class="text-muted">System</em>'}</small></td>
                     <td><small class="text-muted">${m.created_at}</small></td>
+                    <td class="text-center">
+                        ${m.is_read
+                    ? '<i class="bi bi-check2-circle text-success fs-5" title="Read"></i>'
+                    : `<button class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="event.stopPropagation(); markRead(${m.id})" title="Mark as read"><i class="bi bi-circle fs-6 text-muted"></i></button>`
+                }
+                    </td>
                 </tr>
             `).join('');
         } catch (e) {
-            table.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Failed to load messages.</td></tr>`;
+            table.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">Failed to load messages.</td></tr>`;
         }
     }
+
+    async function markAllRead() {
+        try {
+            await apiRequest("/notifications/messages/", "PATCH", { mark_all: true });
+            loadSystemMessages();
+        } catch (e) { }
+    }
+
+    async function markRead(id) {
+        try {
+            await apiRequest("/notifications/messages/", "PATCH", { id });
+            loadSystemMessages();
+        } catch (e) { }
+    }
+
+    // --- Modal logic ---
+    let currentReplyId = null;
+
+    async function openReplyModal(id) {
+        currentReplyId = id;
+        document.getElementById("replyAlert").innerHTML = "";
+        document.getElementById("adminReplyText").value = "";
+        document.getElementById("sendReplyBtn").disabled = false;
+        document.getElementById("sendReplyBtn").innerHTML = `<i class="bi bi-send me-1"></i> Send Reply Email`;
+
+        const myModal = new bootstrap.Modal(document.getElementById('viewReplyModal'));
+        myModal.show();
+
+        try {
+            const res = await apiRequest(`/notifications/reply/${id}/`);
+            if (res) {
+                document.getElementById("replyModalTitle").innerText = res.title;
+                document.getElementById("replyFromName").innerText = res.member_name || "Unknown";
+                document.getElementById("replyFromEmail").innerText = res.reply_to_email || "No email available";
+                document.getElementById("replyCreatedAt").innerText = res.created_at;
+                document.getElementById("replyCategoryBadge").innerText = res.category.toUpperCase();
+                document.getElementById("replyOriginalMsg").innerText = res.message;
+
+                // If it's a message from user and they have email, we can reply
+                if (res.reply_to_email) {
+                    document.getElementById("adminReplyText").disabled = false;
+                    document.getElementById("sendReplyBtn").disabled = false;
+                } else {
+                    document.getElementById("adminReplyText").disabled = true;
+                    document.getElementById("adminReplyText").value = "Replying is not possible (no email associated or system message).";
+                    document.getElementById("sendReplyBtn").disabled = true;
+                }
+            }
+        } catch (e) {
+            document.getElementById("replyOriginalMsg").innerHTML = `<span class="text-danger">Failed to load message body.</span>`;
+        }
+
+        // Marking read updates table in background
+        loadSystemMessages();
+    }
+
+    async function sendReply() {
+        if (!currentReplyId) return;
+        const replyText = document.getElementById("adminReplyText").value.trim();
+        const alertDiv = document.getElementById("replyAlert");
+        const btn = document.getElementById("sendReplyBtn");
+
+        if (!replyText) {
+            alertDiv.innerHTML = `<div class="alert alert-warning py-2 small">Please type a reply message.</div>`;
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Sending...`;
+
+        try {
+            const res = await apiRequest(`/notifications/reply/${currentReplyId}/`, "POST", { reply: replyText });
+            if (res && res.message) {
+                alertDiv.innerHTML = `<div class="alert alert-success py-2 small"><i class="bi bi-check-circle-fill me-1"></i> ${res.message}</div>`;
+                document.getElementById("adminReplyText").value = "";
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('viewReplyModal'));
+                    if (modal) modal.hide();
+                }, 2000);
+            } else {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-1"></i> ${res ? (res.detail || "Error") : 'Failed to send'}</div>`;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-send me-1"></i> Send Reply Email`;
+            }
+        } catch (e) {
+            alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-1"></i> Connection Error</div>`;
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-send me-1"></i> Send Reply Email`;
+        }
+    }
+
 
     async function loadNotificationStatus() {
 
