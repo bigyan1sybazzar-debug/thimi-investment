@@ -204,7 +204,9 @@ class SendBroadcastEmailView(APIView):
                 return Response({'detail': 'Subject and message body are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
             recipients = []
-            if target_group == 'custom' and custom_email:
+            if target_group == 'custom':
+                if not custom_email:
+                    return Response({'detail': 'Please provide recipient email address(es) for custom email target.'}, status=status.HTTP_400_BAD_REQUEST)
                 recipients = [e.strip() for e in custom_email.split(',') if e.strip() and '@' in e.strip()]
             else:
                 members = Member.objects.select_related('user').all()
@@ -215,6 +217,7 @@ class SendBroadcastEmailView(APIView):
                     e = get_member_email(m)
                     if e and '@' in e:
                         recipients.append(e)
+
 
             # Deduplicate
             recipients = list(dict.fromkeys(recipients))

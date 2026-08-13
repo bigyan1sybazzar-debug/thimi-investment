@@ -236,8 +236,17 @@
 
     function toggleCustomEmailInput() {
         const target = document.getElementById("broadcastTarget").value;
-        document.getElementById("customEmailGroup").style.display = target === "custom" ? "block" : "none";
+        const group = document.getElementById("customEmailGroup");
+        const input = document.getElementById("customEmailInput");
+        if (target === "custom") {
+            group.style.display = "block";
+            input.required = true;
+        } else {
+            group.style.display = "none";
+            input.required = false;
+        }
     }
+
 
     document.getElementById("broadcastForm").addEventListener("submit", async function (e) {
         e.preventDefault();
