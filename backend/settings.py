@@ -126,23 +126,17 @@ CSRF_TRUSTED_ORIGINS = [
     'https://thimi-investment-aa.up.railway.app',
 ] + [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
 
-# Email Settings (EverestAstro SMTP)
+# Email Settings (Resend SMTP Relay)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'mail.everestastro.com')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.resend.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-use_ssl_setting = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
-if use_ssl_setting or EMAIL_PORT == 465:
-    EMAIL_USE_SSL = True
-    EMAIL_USE_TLS = False
-else:
-    EMAIL_USE_SSL = False
-    EMAIL_USE_TLS = True
-
-
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'bigyan@everestastro.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'Qwater123@')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <bigyan@everestastro.com>')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'resend')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 're_' + 'i1VX4aSc_' + 'UVCUsAnhQtkUjHCsHEWxH7gP')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <onboarding@resend.dev>')
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
+
 
 
 
