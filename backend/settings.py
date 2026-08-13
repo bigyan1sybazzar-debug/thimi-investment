@@ -128,13 +128,14 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Email Settings (Resend SMTP Relay)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.resend.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
-EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'resend')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 're_' + 'i1VX4aSc_' + 'UVCUsAnhQtkUjHCsHEWxH7gP')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <admin@bigyann.com.np>')
+EMAIL_HOST = 'smtp.resend.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'resend'
+EMAIL_HOST_PASSWORD = os.environ.get('RESEND_API_KEY', 're_' + 'i1VX4aSc_' + 'UVCUsAnhQtkUjHCsHEWxH7gP')
+DEFAULT_FROM_EMAIL = 'Thimi Investment Group <admin@bigyann.com.np>'
+
 
 
 
