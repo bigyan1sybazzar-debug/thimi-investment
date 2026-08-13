@@ -10,6 +10,31 @@ from rest_framework.permissions import IsAdminUser
 
 from accounts.models import User, Member, GlobalSetting
 from deposits.models import Deposit
+from .models import SystemNotification
+
+
+class SystemNotificationListView(APIView):
+    """
+    GET /api/notifications/messages/
+    Returns list of system notifications and profile update alerts for Admin.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        notifs = SystemNotification.objects.all()[:50]
+        data = []
+        for n in notifs:
+            data.append({
+                "id": n.id,
+                "title": n.title,
+                "message": n.message,
+                "category": n.category,
+                "user": n.user.username if n.user else None,
+                "created_at": n.created_at.strftime("%Y-%m-%d %H:%M"),
+                "is_read": n.is_read,
+            })
+        return Response(data)
+
 
 
 def get_member_email(member):

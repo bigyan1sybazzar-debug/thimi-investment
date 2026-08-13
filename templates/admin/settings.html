@@ -135,98 +135,257 @@
                         </div>
                     </div>
                 </div>
+                <!-- Related Footer Documents Upload & Management -->
+                <div class="col-md-12">
+                    <div class="card border-0 shadow">
+                        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i> Related Footer Documents
+                                Manager</span>
+                            <span class="badge bg-primary" id="adminDocCountBadge">0 Docs</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="docManagerAlert"></div>
+                            <form id="docUploadForm" class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Document Title *</label>
+                                    <input type="text" class="form-control" id="docTitle"
+                                        placeholder="e.g. Bylaws 2026 PDF" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Short Description</label>
+                                    <input type="text" class="form-control" id="docDescription"
+                                        placeholder="Optional notes/details">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Select File (PDF, DOCX, etc.) *</label>
+                                    <input type="file" class="form-control" id="docFile" required>
+                                </div>
+                                <div class="col-md-12 text-end">
+                                    <button type="submit" class="btn btn-primary btn-sm px-4" id="uploadDocBtn">
+                                        <i class="bi bi-upload me-1"></i> Upload Document to Footer
+                                    </button>
+                                </div>
+                            </form>
+
+                            <h6 class="fw-bold text-muted border-bottom pb-2 mb-3">Uploaded Related Documents</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Description</th>
+                                            <th>Uploaded Date</th>
+                                            <th>File Link</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminDocsTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-3">Loading documents...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        {% include 'includes/footer.html' %}
     </div>
-    {% include 'includes/footer.html' %}
-</div>
-{% endblock %}
-{% block extra_js %}
-<script src="{% static 'js/api.js' %}"></script>
-<script>
-    window.onload = async function () {
-        const response = await apiRequest("/deposits/settings/");
-        if (response) {
-            document.getElementById("fieldGlobalRemainingDays").value = response.remaining_days !== undefined ? response.remaining_days : 0;
-            document.getElementById("fieldGlobalLastUpdated").value = response.remaining_days_updated_at || "Not scheduled yet";
-            if (response.qr_code_url) {
-                showQrPreview(response.qr_code_url);
+    {% endblock %}
+    {% block extra_js %}
+    <script src="{% static 'js/api.js' %}"></script>
+    <script>
+        window.onload = async function () {
+            const response = await apiRequest("/deposits/settings/");
+            if (response) {
+                document.getElementById("fieldGlobalRemainingDays").value = response.remaining_days !== undefined ? response.remaining_days : 0;
+                document.getElementById("fieldGlobalLastUpdated").value = response.remaining_days_updated_at || "Not scheduled yet";
+                if (response.qr_code_url) {
+                    showQrPreview(response.qr_code_url);
+                }
             }
-        }
-    };
-
-    function showQrPreview(url) {
-        document.getElementById("qrPreviewBox").style.display = "none";
-        const img = document.getElementById("qrPreviewImg");
-        img.src = url;
-        img.style.display = "block";
-        const dl = document.getElementById("qrDownloadLink");
-        dl.href = url;
-        dl.style.display = "inline-block";
-    }
-
-    document.getElementById("globalSettingsForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
-        const btn = document.getElementById("saveGlobalSettingBtn");
-        const alertDiv = document.getElementById("settingsAlert");
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
-
-        const payload = {
-            remaining_days: parseInt(document.getElementById("fieldGlobalRemainingDays").value) || 0
         };
 
-        const result = await apiRequest("/deposits/settings/", "POST", payload);
-        if (result && !result.detail) {
-            alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>Settings saved!</div>`;
-            document.getElementById("fieldGlobalLastUpdated").value = result.remaining_days_updated_at || "—";
-            setTimeout(() => alertDiv.innerHTML = "", 3000);
-        } else {
-            alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-2"></i>Failed: ${result ? (result.detail || JSON.stringify(result)) : 'Unknown error'}</div>`;
-        }
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-save"></i> Save Deadline Configuration`;
-    });
-
-    document.getElementById("qrUploadForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
-        const btn = document.getElementById("saveQrBtn");
-        const alertDiv = document.getElementById("qrAlert");
-        const fileInput = document.getElementById("fieldQrFile");
-
-        if (!fileInput.files[0]) {
-            alertDiv.innerHTML = `<div class="alert alert-warning py-2">Please select a QR image file first.</div>`;
-            return;
+        function showQrPreview(url) {
+            document.getElementById("qrPreviewBox").style.display = "none";
+            const img = document.getElementById("qrPreviewImg");
+            img.src = url;
+            img.style.display = "block";
+            const dl = document.getElementById("qrDownloadLink");
+            dl.href = url;
+            dl.style.display = "inline-block";
         }
 
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Uploading...`;
+        document.getElementById("globalSettingsForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById("saveGlobalSettingBtn");
+            const alertDiv = document.getElementById("settingsAlert");
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
 
-        const token = localStorage.getItem("access");
-        const formData = new FormData();
-        formData.append("qr_code", fileInput.files[0]);
+            const payload = {
+                remaining_days: parseInt(document.getElementById("fieldGlobalRemainingDays").value) || 0
+            };
 
-        try {
-            const res = await fetch("/api/deposits/settings/", {
-                method: "POST",
-                headers: { "Authorization": "Bearer " + token },
-                body: formData
-            });
-            const result = await res.json();
-            if (res.ok && result.qr_code_url) {
-                alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>QR uploaded successfully!</div>`;
-                showQrPreview(result.qr_code_url);
-                fileInput.value = "";
+            const result = await apiRequest("/deposits/settings/", "POST", payload);
+            if (result && !result.detail) {
+                alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>Settings saved!</div>`;
+                document.getElementById("fieldGlobalLastUpdated").value = result.remaining_days_updated_at || "—";
                 setTimeout(() => alertDiv.innerHTML = "", 3000);
             } else {
-                alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-2"></i>Upload failed: ${result.detail || JSON.stringify(result)}</div>`;
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-2"></i>Failed: ${result ? (result.detail || JSON.stringify(result)) : 'Unknown error'}</div>`;
             }
-        } catch (err) {
-            alertDiv.innerHTML = `<div class="alert alert-danger py-2">Error uploading QR: ${err.message}</div>`;
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-save"></i> Save Deadline Configuration`;
+        });
+
+        document.getElementById("qrUploadForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById("saveQrBtn");
+            const alertDiv = document.getElementById("qrAlert");
+            const fileInput = document.getElementById("fieldQrFile");
+
+            if (!fileInput.files[0]) {
+                alertDiv.innerHTML = `<div class="alert alert-warning py-2">Please select a QR image file first.</div>`;
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Uploading...`;
+
+            const token = localStorage.getItem("access");
+            const formData = new FormData();
+            formData.append("qr_code", fileInput.files[0]);
+
+            try {
+                const res = await fetch("/api/deposits/settings/", {
+                    method: "POST",
+                    headers: { "Authorization": "Bearer " + token },
+                    body: formData
+                });
+                const result = await res.json();
+                if (res.ok && result.qr_code_url) {
+                    alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>QR uploaded successfully!</div>`;
+                    showQrPreview(result.qr_code_url);
+                    fileInput.value = "";
+                    setTimeout(() => alertDiv.innerHTML = "", 3000);
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-2"></i>Upload failed: ${result.detail || JSON.stringify(result)}</div>`;
+                }
+            } catch (err) {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2">Error uploading QR: ${err.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-upload"></i> Upload QR Code`;
+        });
+
+        // --- Document Management Logic ---
+        window.addEventListener("load", loadAdminDocuments);
+
+        async function loadAdminDocuments() {
+            const table = document.getElementById("adminDocsTable");
+            const badge = document.getElementById("adminDocCountBadge");
+            if (!table) return;
+
+            try {
+                const res = await fetch("/api/accounts/documents/");
+                const docs = await res.json();
+                if (badge) badge.innerText = `${docs ? docs.length : 0} Docs`;
+
+                if (!docs || docs.length === 0) {
+                    table.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No related documents uploaded yet.</td></tr>`;
+                    return;
+                }
+
+                table.innerHTML = docs.map(d => `
+                    <tr>
+                        <td><strong>${d.title}</strong></td>
+                        <td>${d.description || '<span class="text-muted">—</span>'}</td>
+                        <td><small class="text-muted">${d.uploaded_at}</small></td>
+                        <td><a href="${d.file_url}" target="_blank" download class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-download"></i> View / Download</a></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteDoc(${d.id})"><i class="bi bi-trash"></i> Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                table.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">Failed to load documents.</td></tr>`;
+            }
         }
 
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-upload"></i> Upload QR Code`;
-    });
-</script>
-{% endblock %}
+        document.getElementById("docUploadForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById("uploadDocBtn");
+            const alertDiv = document.getElementById("docManagerAlert");
+            const fileInput = document.getElementById("docFile");
+            const titleInput = document.getElementById("docTitle");
+            const descInput = document.getElementById("docDescription");
+
+            if (!fileInput.files[0] || !titleInput.value.trim()) {
+                alertDiv.innerHTML = `<div class="alert alert-warning py-2">Please fill in title and select a file.</div>`;
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Uploading...`;
+
+            const token = localStorage.getItem("access");
+            const formData = new FormData();
+            formData.append("title", titleInput.value.trim());
+            formData.append("description", descInput.value.trim());
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const res = await fetch("/api/accounts/documents/manage/", {
+                    method: "POST",
+                    headers: { "Authorization": "Bearer " + token },
+                    body: formData
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>Document uploaded!</div>`;
+                    titleInput.value = "";
+                    descInput.value = "";
+                    fileInput.value = "";
+                    loadAdminDocuments();
+                    setTimeout(() => alertDiv.innerHTML = "", 3000);
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-danger py-2">Upload failed: ${result.detail || JSON.stringify(result)}</div>`;
+                }
+            } catch (err) {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2">Error uploading document: ${err.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-upload me-1"></i> Upload Document to Footer`;
+        });
+
+        async function deleteDoc(docId) {
+            if (!confirm("Are you sure you want to delete this document from the footer?")) return;
+            const alertDiv = document.getElementById("docManagerAlert");
+            const token = localStorage.getItem("access");
+
+            try {
+                const res = await fetch(`/api/accounts/documents/manage/?id=${docId}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-2"></i>Document deleted!</div>`;
+                    loadAdminDocuments();
+                    setTimeout(() => alertDiv.innerHTML = "", 3000);
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-danger py-2">Delete failed: ${result.detail || JSON.stringify(result)}</div>`;
+                }
+            } catch (err) {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2">Error deleting document: ${err.message}</div>`;
+            }
+        }
+    </script>
+    {% endblock %}

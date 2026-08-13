@@ -138,36 +138,35 @@
             </div>
         </div>
 
-        <!-- ── System Alerts Section ── -->
+        <!-- ── System Activity & Member Profile Updates ── -->
         <div class="card border-0 shadow">
-            <div class="card-header bg-white fw-bold py-3">
-                <i class="bi bi-shield-exclamation text-warning me-2 fs-5"></i> System Activity Alerts
+            <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-gear text-primary me-2 fs-5"></i> Member Profile Updates & Admin
+                    Messages</span>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadSystemMessages()"><i
+                        class="bi bi-arrow-clockwise"></i> Refresh</button>
             </div>
             <div class="card-body p-4">
-                <div class="alert alert-warning d-flex align-items-center mb-3">
-                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
-                    <div>
-                        <strong>Pending Deposit Approvals:</strong> Members have submitted deposit receipts awaiting
-                        verification.
-                        <a href="/deposits/" class="btn btn-sm btn-warning ms-2 fw-semibold">Review Deposits</a>
-                    </div>
-                </div>
-                <div class="alert alert-info d-flex align-items-center mb-3">
-                    <i class="bi bi-info-circle-fill me-3 fs-4"></i>
-                    <div>
-                        <strong>Active Loan Track:</strong> Devendra Sharma's loan of Rs. 1,00,000 (disbursed
-                        2025/03/22) is currently active.
-                        <a href="/loans/" class="btn btn-sm btn-info text-white ms-2 fw-semibold">View Loans</a>
-                    </div>
-                </div>
-                <div class="alert alert-secondary d-flex align-items-center mb-0">
-                    <i class="bi bi-check-circle-fill me-3 fs-4"></i>
-                    <div>
-                        <strong>Hydropower Plan:</strong> Project status updated. No urgent action required.
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th>Message / Notification</th>
+                                <th>User</th>
+                                <th>Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="systemMessagesTable">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">Loading admin messages...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
 
     </div>
     {% include 'includes/footer.html' %}
@@ -179,9 +178,33 @@
 <script>
     window.onload = function () {
         loadNotificationStatus();
+        loadSystemMessages();
     };
 
+    async function loadSystemMessages() {
+        const table = document.getElementById("systemMessagesTable");
+        if (!table) return;
+        try {
+            const messages = await apiRequest("/notifications/messages/");
+            if (!messages || messages.length === 0) {
+                table.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No member updates or system messages yet.</td></tr>`;
+                return;
+            }
+            table.innerHTML = messages.map(m => `
+                <tr>
+                    <td><span class="badge bg-${m.category === 'profile_update' ? 'primary' : 'secondary'}">${m.category}</span></td>
+                    <td><strong>${m.title}</strong><br/><small class="text-muted">${m.message}</small></td>
+                    <td>${m.user || 'System'}</td>
+                    <td><small class="text-muted">${m.created_at}</small></td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            table.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Failed to load messages.</td></tr>`;
+        }
+    }
+
     async function loadNotificationStatus() {
+
         try {
             const data = await apiRequest("/notifications/status/");
             if (data && data.total_members !== undefined) {

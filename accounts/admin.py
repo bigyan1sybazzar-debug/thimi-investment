@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Member, GlobalSetting
+from .models import Member, GlobalSetting, RelatedDocument
 
 
 @admin.register(Member)
@@ -21,3 +21,10 @@ class MemberAdmin(admin.ModelAdmin):
 
 
 admin.site.register(GlobalSetting)
+
+
+@admin.register(RelatedDocument)
+class RelatedDocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'file', 'uploaded_at', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('title', 'description')

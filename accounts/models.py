@@ -67,3 +67,17 @@ class GlobalSetting(models.Model):
         else:
             self.remaining_days_updated_at = timezone.now().date()
         super().save(*args, **kwargs)
+
+
+class RelatedDocument(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to='documents/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.title

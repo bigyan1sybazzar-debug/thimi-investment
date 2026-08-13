@@ -13,6 +13,10 @@
         <small class="text-muted" id="welcomeText">Welcome</small>
     </div>
     <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="openProfileSettingsModal()">
+            <i class="bi bi-gear"></i>
+            <span class="d-none d-sm-inline ms-1">Settings</span>
+        </button>
         <a href="/admin-dashboard/" class="btn btn-primary btn-sm" id="goToAdminBtn" style="display:none;">
             <i class="bi bi-shield-lock"></i>
             <span class="d-none d-sm-inline ms-1">Admin</span>
@@ -22,6 +26,7 @@
             <span class="d-none d-sm-inline ms-1">Logout</span>
         </button>
     </div>
+
 </header>
 
 <div class="container-fluid py-3 px-3">
@@ -346,80 +351,133 @@
                 </form>
             </div>
         </div>
-    </div>
+        <!-- User Settings / Profile Modal -->
+        <div class="modal fade" id="profileSettingsModal" tabindex="-1" aria-labelledby="profileSettingsModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <form id="userSettingsForm">
+                        <div class="modal-header bg-light">
+                            <h5 class="modal-title fw-bold" id="profileSettingsModalLabel">⚙️ Profile & Security
+                                Settings</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div id="settingsAlert"></div>
 
-    {% endblock %}
+                            <!-- Update Email -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-envelope me-1"></i> Update Email
+                                    Address</h6>
+                                <label class="form-label small fw-semibold text-muted">Email Address</label>
+                                <input type="email" class="form-control" id="settingsEmail"
+                                    placeholder="your.email@example.com">
+                                <div class="form-text">Updating your email will notify administrators and update your
+                                    credentials.</div>
+                            </div>
 
-    {% block extra_js %}
+                            <hr />
 
-    <script src="/static/js/api.js"></script>
-    <script>
+                            <!-- Change Password -->
+                            <div>
+                                <h6 class="fw-bold text-warning mb-2"><i class="bi bi-key me-1"></i> Change Password
+                                </h6>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">Current Password</label>
+                                    <input type="password" class="form-control" id="settingsCurrentPassword"
+                                        placeholder="Required to change password">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">New Password</label>
+                                    <input type="password" class="form-control" id="settingsNewPassword"
+                                        placeholder="Min. 8 characters">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary btn-sm ms-auto" id="saveSettingsBtn">Save
+                                Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-        const token = localStorage.getItem("access");
+        {% endblock %}
 
-        if (!token) {
-            window.location.href = "/";
-        }
 
-        function logout() {
+        {% block extra_js %}
 
-            localStorage.removeItem("access");
-            localStorage.removeItem("refresh");
+        <script src="/static/js/api.js"></script>
+        <script>
 
-            window.location.href = "/";
+            const token = localStorage.getItem("access");
 
-        }
+            if (!token) {
+                window.location.href = "/";
+            }
 
-        fetch("/api/deposits/dashboard/", {
+            function logout() {
 
-            headers: {
+                localStorage.removeItem("access");
+                localStorage.removeItem("refresh");
 
-                Authorization: "Bearer " + token
+                window.location.href = "/";
 
             }
 
-        })
+            fetch("/api/deposits/dashboard/", {
 
-            .then(response => {
+                headers: {
 
-                if (response.status === 401) {
-
-                    logout();
+                    Authorization: "Bearer " + token
 
                 }
 
-                return response.json();
-
             })
 
-            .then(data => {
+                .then(response => {
 
-                document.getElementById("welcomeText").innerHTML =
-                    "Welcome, " + data.member.username;
+                    if (response.status === 401) {
 
-                document.getElementById("approvedAmount").innerHTML =
-                    data.summary.approved_deposit;
+                        logout();
 
-                document.getElementById("pendingAmount").innerHTML =
-                    data.summary.pending_deposit;
+                    }
 
-                // Render deadline banner
-                const member = data.member;
-                const deposits = data.deposits;
+                    return response.json();
 
-                const curYear = new Date().getFullYear();
-                const curMonth = new Date().getMonth() + 1;
+                })
 
-                const hasPaid = deposits.some(dep => {
-                    return dep.saving_year === curYear &&
-                        dep.saving_month === curMonth &&
-                        (dep.status === 'approved' || dep.status === 'pending');
-                });
+                .then(data => {
 
-                const bannerEl = document.getElementById("paymentDeadlineBanner");
-                if (bannerEl) {
-                    if (member.remaining_days === undefined || member.remaining_days === null || member.remaining_days <= 0) {
-                        bannerEl.innerHTML = `
+                    document.getElementById("welcomeText").innerHTML =
+                        "Welcome, " + data.member.username;
+
+                    document.getElementById("approvedAmount").innerHTML =
+                        data.summary.approved_deposit;
+
+                    document.getElementById("pendingAmount").innerHTML =
+                        data.summary.pending_deposit;
+
+                    // Render deadline banner
+                    const member = data.member;
+                    const deposits = data.deposits;
+
+                    const curYear = new Date().getFullYear();
+                    const curMonth = new Date().getMonth() + 1;
+
+                    const hasPaid = deposits.some(dep => {
+                        return dep.saving_year === curYear &&
+                            dep.saving_month === curMonth &&
+                            (dep.status === 'approved' || dep.status === 'pending');
+                    });
+
+                    const bannerEl = document.getElementById("paymentDeadlineBanner");
+                    if (bannerEl) {
+                        if (member.remaining_days === undefined || member.remaining_days === null || member.remaining_days <= 0) {
+                            bannerEl.innerHTML = `
                             <div class="card border-0 shadow-sm bg-light">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="me-3 fs-4 text-secondary">
@@ -432,10 +490,10 @@
                                 </div>
                             </div>
                         `;
-                    } else if (hasPaid) {
-                        let paidDep = deposits.find(dep => dep.saving_year === curYear && dep.saving_month === curMonth);
-                        let depStatus = paidDep ? paidDep.status : '';
-                        bannerEl.innerHTML = `
+                        } else if (hasPaid) {
+                            let paidDep = deposits.find(dep => dep.saving_year === curYear && dep.saving_month === curMonth);
+                            let depStatus = paidDep ? paidDep.status : '';
+                            bannerEl.innerHTML = `
                             <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);">
                                 <div class="card-body d-flex align-items-center p-3 text-dark">
                                     <div class="me-3 fs-3 text-success">
@@ -448,59 +506,59 @@
                                 </div>
                             </div>
                         `;
-                    } else {
-                        // Calculate elapsed and remaining days
-                        const today = new Date();
-                        const todayStr = today.getFullYear() + "-" +
-                            String(today.getMonth() + 1).padStart(2, '0') + "-" +
-                            String(today.getDate()).padStart(2, '0');
-
-                        let daysElapsed = 0;
-                        if (member.remaining_days_updated_at) {
-                            const start = new Date(member.remaining_days_updated_at);
-                            const end = new Date(todayStr);
-                            start.setHours(0, 0, 0, 0);
-                            end.setHours(0, 0, 0, 0);
-                            const diffTime = end.getTime() - start.getTime();
-                            daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                            if (daysElapsed < 0) daysElapsed = 0;
-                        }
-
-                        const initialDays = member.remaining_days || 0;
-                        const daysLeft = Math.max(0, initialDays - daysElapsed);
-
-                        // Decide fine and theme based on elapsed days
-                        let fine = 0;
-                        let fineMsg = "";
-                        let bgGradient = "";
-                        let iconHtml = "";
-                        let borderStyle = "";
-                        let textClass = "";
-
-                        if (daysElapsed <= 5) {
-                            fine = 0;
-                            fineMsg = "Rs. 0 (Within 5-day grace period)";
-                            bgGradient = "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)";
-                            iconHtml = '<i class="bi bi-clock-history text-info-emphasis"></i>';
-                            borderStyle = "border: 1px solid #4dd0e1;";
-                            textClass = "text-dark";
-                        } else if (daysElapsed > 5 && daysElapsed <= 10) {
-                            fine = 200;
-                            fineMsg = "Rs. 200 (Day 6 to 10 of payment period)";
-                            bgGradient = "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)";
-                            iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
-                            borderStyle = "border: 1px solid #ffb74d;";
-                            textClass = "text-dark";
                         } else {
-                            fine = 100;
-                            fineMsg = "Rs. 100 (Unpaid after 10 days)";
-                            bgGradient = "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)";
-                            iconHtml = '<i class="bi bi-exclamation-octagon-fill text-danger"></i>';
-                            borderStyle = "border: 1px solid #e57373;";
-                            textClass = "text-dark";
-                        }
+                            // Calculate elapsed and remaining days
+                            const today = new Date();
+                            const todayStr = today.getFullYear() + "-" +
+                                String(today.getMonth() + 1).padStart(2, '0') + "-" +
+                                String(today.getDate()).padStart(2, '0');
 
-                        bannerEl.innerHTML = `
+                            let daysElapsed = 0;
+                            if (member.remaining_days_updated_at) {
+                                const start = new Date(member.remaining_days_updated_at);
+                                const end = new Date(todayStr);
+                                start.setHours(0, 0, 0, 0);
+                                end.setHours(0, 0, 0, 0);
+                                const diffTime = end.getTime() - start.getTime();
+                                daysElapsed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                if (daysElapsed < 0) daysElapsed = 0;
+                            }
+
+                            const initialDays = member.remaining_days || 0;
+                            const daysLeft = Math.max(0, initialDays - daysElapsed);
+
+                            // Decide fine and theme based on elapsed days
+                            let fine = 0;
+                            let fineMsg = "";
+                            let bgGradient = "";
+                            let iconHtml = "";
+                            let borderStyle = "";
+                            let textClass = "";
+
+                            if (daysElapsed <= 5) {
+                                fine = 0;
+                                fineMsg = "Rs. 0 (Within 5-day grace period)";
+                                bgGradient = "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)";
+                                iconHtml = '<i class="bi bi-clock-history text-info-emphasis"></i>';
+                                borderStyle = "border: 1px solid #4dd0e1;";
+                                textClass = "text-dark";
+                            } else if (daysElapsed > 5 && daysElapsed <= 10) {
+                                fine = 200;
+                                fineMsg = "Rs. 200 (Day 6 to 10 of payment period)";
+                                bgGradient = "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)";
+                                iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
+                                borderStyle = "border: 1px solid #ffb74d;";
+                                textClass = "text-dark";
+                            } else {
+                                fine = 100;
+                                fineMsg = "Rs. 100 (Unpaid after 10 days)";
+                                bgGradient = "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)";
+                                iconHtml = '<i class="bi bi-exclamation-octagon-fill text-danger"></i>';
+                                borderStyle = "border: 1px solid #e57373;";
+                                textClass = "text-dark";
+                            }
+
+                            bannerEl.innerHTML = `
                             <div class="card border-0 shadow-sm" style="${borderStyle} background: ${bgGradient};">
                                 <div class="card-body p-4 ${textClass}">
                                     <div class="row align-items-center">
@@ -540,16 +598,16 @@
                                 </div>
                             </div>
                         `;
+                        }
                     }
-                }
 
-                let table = document.getElementById("paymentTable");
+                    let table = document.getElementById("paymentTable");
 
-                table.innerHTML = "";
+                    table.innerHTML = "";
 
-                if (data.deposits.length === 0) {
+                    if (data.deposits.length === 0) {
 
-                    table.innerHTML = `
+                        table.innerHTML = `
         <tr>
             <td colspan="5" class="text-center">
                 No payment records found.
@@ -557,25 +615,25 @@
         </tr>
         `;
 
-                    return;
+                        return;
 
-                }
+                    }
 
-                document.getElementById("currentStatus").innerHTML =
-                    data.deposits[0].status;
+                    document.getElementById("currentStatus").innerHTML =
+                        data.deposits[0].status;
 
-                data.deposits.forEach(function (item) {
+                    data.deposits.forEach(function (item) {
 
-                    table.innerHTML += `
+                        table.innerHTML += `
         <tr>
             <td>${item.saving_year}</td>
             <td>${item.saving_month}</td>
             <td>Rs. ${item.amount}</td>
             <td>
                 <span class="badge bg-${item.status == 'approved' ? 'success'
-                            : item.status == 'pending' ? 'warning'
-                                : 'danger'
-                        }">
+                                : item.status == 'pending' ? 'warning'
+                                    : 'danger'
+                            }">
                 ${item.status}
                 </span>
             </td>
@@ -583,23 +641,23 @@
         </tr>
         `;
 
-                });
+                    });
 
-                // Show admin redirect button if user is staff/superuser
-                if (data.member.is_staff || data.member.is_superuser) {
-                    document.getElementById("goToAdminBtn").style.display = "inline-block";
-                }
+                    // Show admin redirect button if user is staff/superuser
+                    if (data.member.is_staff || data.member.is_superuser) {
+                        document.getElementById("goToAdminBtn").style.display = "inline-block";
+                    }
 
-                // Populate Group Investments & Loans from Thimi Data
-                const thimi = data.thimi_data;
-                if (thimi) {
-                    // Loans Summary & Table
-                    document.getElementById("groupTotalPrincipal").innerText = "Rs. " + thimi.loans.total_principal.toLocaleString();
-                    document.getElementById("groupTotalInterest").innerText = "Rs. " + thimi.loans.total_interest_paid.toLocaleString();
+                    // Populate Group Investments & Loans from Thimi Data
+                    const thimi = data.thimi_data;
+                    if (thimi) {
+                        // Loans Summary & Table
+                        document.getElementById("groupTotalPrincipal").innerText = "Rs. " + thimi.loans.total_principal.toLocaleString();
+                        document.getElementById("groupTotalInterest").innerText = "Rs. " + thimi.loans.total_interest_paid.toLocaleString();
 
-                    let loansHtml = "";
-                    thimi.loans.records.forEach(record => {
-                        loansHtml += `
+                        let loansHtml = "";
+                        thimi.loans.records.forEach(record => {
+                            loansHtml += `
                         <tr>
                             <td>${record.s_no}</td>
                             <td>${record.name}</td>
@@ -608,148 +666,212 @@
                             <td>Rs. ${record.interest_paid.toLocaleString()}</td>
                             <td><span class="badge bg-${record.status === 'Closed' ? 'secondary' : 'success'}">${record.status}</span></td>
                         </tr>`;
-                    });
-                    document.getElementById("memberLoansTable").innerHTML = loansHtml;
+                        });
+                        document.getElementById("memberLoansTable").innerHTML = loansHtml;
 
-                    // Stocks Holdings Summary & Table
-                    document.getElementById("groupTotalShareInvested").innerText = "Rs. " + thimi.financial_summary.total_amount_invested_on_shares.toLocaleString();
-                    document.getElementById("groupTotalShareValue").innerText = "Rs. " + thimi.financial_summary.share_value.toLocaleString();
+                        // Stocks Holdings Summary & Table
+                        document.getElementById("groupTotalShareInvested").innerText = "Rs. " + thimi.financial_summary.total_amount_invested_on_shares.toLocaleString();
+                        document.getElementById("groupTotalShareValue").innerText = "Rs. " + thimi.financial_summary.share_value.toLocaleString();
 
-                    let stockHtml = "";
-                    thimi.share_details.shares_in_stock.forEach(share => {
-                        stockHtml += `
+                        let stockHtml = "";
+                        thimi.share_details.shares_in_stock.forEach(share => {
+                            stockHtml += `
                         <tr>
                             <td><strong>${share.stock}</strong></td>
                             <td>${share.no_of_kitta}</td>
                         </tr>`;
-                    });
-                    document.getElementById("memberSharesTable").innerHTML = stockHtml;
+                        });
+                        document.getElementById("memberSharesTable").innerHTML = stockHtml;
 
-                    // Hydropower Plan Summary & Table
-                    document.getElementById("groupHydroTotal").innerText = "Rs. " + thimi.hydropower_plan.total.toLocaleString();
-                    let hydroHtml = "";
-                    thimi.hydropower_plan.deposits.forEach(dep => {
-                        hydroHtml += `
+                        // Hydropower Plan Summary & Table
+                        document.getElementById("groupHydroTotal").innerText = "Rs. " + thimi.hydropower_plan.total.toLocaleString();
+                        let hydroHtml = "";
+                        thimi.hydropower_plan.deposits.forEach(dep => {
+                            hydroHtml += `
                         <tr>
                             <td>${dep.name}</td>
                             <td>${dep.amount !== null ? 'Rs. ' + dep.amount.toLocaleString() : '<span class="text-secondary small">Not contributed</span>'}</td>
                         </tr>`;
-                    });
-                    document.getElementById("memberHydroTable").innerHTML = hydroHtml;
-                }
+                        });
+                        document.getElementById("memberHydroTable").innerHTML = hydroHtml;
+                    }
 
-            })
+                })
 
-            .catch(function (error) {
+                .catch(function (error) {
 
-                console.log(error);
+                    console.log(error);
 
-            });
-
-        function exportPaymentHistory() {
-            const table = document.getElementById("paymentTable");
-            if (!table) return;
-            const rows = table.querySelectorAll("tr");
-            const csv = [["Year", "Month", "Amount", "Status", "Date"]];
-            rows.forEach(row => {
-                const cells = row.querySelectorAll("td");
-                if (cells.length >= 5) {
-                    const year = cells[0].innerText.trim();
-                    const month = cells[1].innerText.trim();
-                    // clean up Rs amount
-                    const amt = cells[2].innerText.replace(/Rs\.\s*/g, "").replace(/,/g, "").trim();
-                    const status = cells[3].innerText.trim();
-                    const date = cells[4].innerText.trim();
-                    csv.push([`"${year}"`, `"${month}"`, `"${amt}"`, `"${status}"`, `"${date}"`]);
-                }
-            });
-            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.map(e => e.join(",")).join("\n");
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "payment_history.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        let loanModal;
-        document.addEventListener("DOMContentLoaded", () => {
-            const modalEl = document.getElementById('claimLoanModal');
-            if (modalEl) {
-                loanModal = new bootstrap.Modal(modalEl);
-            }
-        });
-
-        function openClaimLoanModal() {
-            document.getElementById("claimLoanForm").reset();
-            document.getElementById("modalLoanAlert").innerHTML = "";
-            if (loanModal) loanModal.show();
-        }
-
-        document.getElementById("claimLoanForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
-            const btn = document.getElementById("submitLoanBtn");
-            const alertDiv = document.getElementById("modalLoanAlert");
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
-
-            const payload = {
-                amount: parseFloat(document.getElementById("modalLoanAmount").value),
-                remarks: document.getElementById("modalLoanRemarks").value,
-            };
-
-            const data = await apiRequest("/loans/", "POST", payload);
-
-            if (data && !data.detail) {
-                alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Loan request submitted successfully! Pending admin approval.</div>`;
-                setTimeout(() => {
-                    if (loanModal) loanModal.hide();
-                    location.reload();
-                }, 2000);
-            } else {
-                alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x"></i> Failed: ${data.detail || JSON.stringify(data)}</div>`;
-            }
-            btn.disabled = false;
-            btn.innerHTML = "Submit Request";
-        });
-
-        // QR Modal
-        let qrModalInstance;
-        document.addEventListener("DOMContentLoaded", () => {
-            const qrEl = document.getElementById("qrModal");
-            if (qrEl) qrModalInstance = new bootstrap.Modal(qrEl);
-        });
-
-        async function openQrModal() {
-            document.getElementById("qrModalLoading").style.display = "block";
-            document.getElementById("qrModalImg").style.display = "none";
-            document.getElementById("qrModalNoQr").style.display = "none";
-            document.getElementById("qrDownloadBtn").style.display = "none";
-            if (qrModalInstance) qrModalInstance.show();
-
-            const token = localStorage.getItem("access");
-            try {
-                const res = await fetch("/api/deposits/settings/", {
-                    headers: { "Authorization": "Bearer " + token }
                 });
-                const data = await res.json();
-                document.getElementById("qrModalLoading").style.display = "none";
-                if (data.qr_code_url) {
-                    const img = document.getElementById("qrModalImg");
-                    img.src = data.qr_code_url;
-                    img.style.display = "block";
-                    const dl = document.getElementById("qrDownloadBtn");
-                    dl.href = data.qr_code_url;
-                    dl.style.display = "inline-block";
+
+            function exportPaymentHistory() {
+                const table = document.getElementById("paymentTable");
+                if (!table) return;
+                const rows = table.querySelectorAll("tr");
+                const csv = [["Year", "Month", "Amount", "Status", "Date"]];
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll("td");
+                    if (cells.length >= 5) {
+                        const year = cells[0].innerText.trim();
+                        const month = cells[1].innerText.trim();
+                        // clean up Rs amount
+                        const amt = cells[2].innerText.replace(/Rs\.\s*/g, "").replace(/,/g, "").trim();
+                        const status = cells[3].innerText.trim();
+                        const date = cells[4].innerText.trim();
+                        csv.push([`"${year}"`, `"${month}"`, `"${amt}"`, `"${status}"`, `"${date}"`]);
+                    }
+                });
+                const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.map(e => e.join(",")).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "payment_history.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            let loanModal;
+            document.addEventListener("DOMContentLoaded", () => {
+                const modalEl = document.getElementById('claimLoanModal');
+                if (modalEl) {
+                    loanModal = new bootstrap.Modal(modalEl);
+                }
+            });
+
+            function openClaimLoanModal() {
+                document.getElementById("claimLoanForm").reset();
+                document.getElementById("modalLoanAlert").innerHTML = "";
+                if (loanModal) loanModal.show();
+            }
+
+            document.getElementById("claimLoanForm").addEventListener("submit", async function (e) {
+                e.preventDefault();
+                const btn = document.getElementById("submitLoanBtn");
+                const alertDiv = document.getElementById("modalLoanAlert");
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
+
+                const payload = {
+                    amount: parseFloat(document.getElementById("modalLoanAmount").value),
+                    remarks: document.getElementById("modalLoanRemarks").value,
+                };
+
+                const data = await apiRequest("/loans/", "POST", payload);
+
+                if (data && !data.detail) {
+                    alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Loan request submitted successfully! Pending admin approval.</div>`;
+                    setTimeout(() => {
+                        if (loanModal) loanModal.hide();
+                        location.reload();
+                    }, 2000);
                 } else {
+                    alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x"></i> Failed: ${data.detail || JSON.stringify(data)}</div>`;
+                }
+                btn.disabled = false;
+                btn.innerHTML = "Submit Request";
+            });
+
+            // QR Modal
+            let qrModalInstance;
+            document.addEventListener("DOMContentLoaded", () => {
+                const qrEl = document.getElementById("qrModal");
+                if (qrEl) qrModalInstance = new bootstrap.Modal(qrEl);
+            });
+
+            async function openQrModal() {
+                document.getElementById("qrModalLoading").style.display = "block";
+                document.getElementById("qrModalImg").style.display = "none";
+                document.getElementById("qrModalNoQr").style.display = "none";
+                document.getElementById("qrDownloadBtn").style.display = "none";
+                if (qrModalInstance) qrModalInstance.show();
+
+                const token = localStorage.getItem("access");
+                try {
+                    const res = await fetch("/api/deposits/settings/", {
+                        headers: { "Authorization": "Bearer " + token }
+                    });
+                    const data = await res.json();
+                    document.getElementById("qrModalLoading").style.display = "none";
+                    if (data.qr_code_url) {
+                        const img = document.getElementById("qrModalImg");
+                        img.src = data.qr_code_url;
+                        img.style.display = "block";
+                        const dl = document.getElementById("qrDownloadBtn");
+                        dl.href = data.qr_code_url;
+                        dl.style.display = "inline-block";
+                    } else {
+                        document.getElementById("qrModalNoQr").style.display = "block";
+                    }
+                } catch (err) {
+                    document.getElementById("qrModalLoading").style.display = "none";
                     document.getElementById("qrModalNoQr").style.display = "block";
                 }
-            } catch (err) {
-                document.getElementById("qrModalLoading").style.display = "none";
-                document.getElementById("qrModalNoQr").style.display = "block";
             }
-        }
-    </script>
 
-    {% endblock %}
+            // User Settings Modal Logic
+            let settingsModalInstance;
+            document.addEventListener("DOMContentLoaded", () => {
+                const modalEl = document.getElementById("profileSettingsModal");
+                if (modalEl) settingsModalInstance = new bootstrap.Modal(modalEl);
+            });
+
+            async function openProfileSettingsModal() {
+                document.getElementById("userSettingsForm").reset();
+                document.getElementById("settingsAlert").innerHTML = "";
+
+                // Prefill user email if current user data available
+                const token = localStorage.getItem("access");
+                try {
+                    const res = await fetch("/api/accounts/me/", {
+                        headers: { "Authorization": "Bearer " + token }
+                    });
+                    if (res.ok) {
+                        const me = await res.json();
+                        if (me.email) document.getElementById("settingsEmail").value = me.email;
+                    }
+                } catch (e) { }
+
+                if (settingsModalInstance) settingsModalInstance.show();
+            }
+
+            document.getElementById("userSettingsForm").addEventListener("submit", async function (e) {
+                e.preventDefault();
+                const btn = document.getElementById("saveSettingsBtn");
+                const alertDiv = document.getElementById("settingsAlert");
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
+                alertDiv.innerHTML = "";
+
+                const email = document.getElementById("settingsEmail").value.trim();
+                const current_password = document.getElementById("settingsCurrentPassword").value;
+                const new_password = document.getElementById("settingsNewPassword").value;
+
+                const payload = {};
+                if (email) payload.email = email;
+                if (new_password) {
+                    payload.current_password = current_password;
+                    payload.new_password = new_password;
+                }
+
+                try {
+                    const data = await apiRequest("/accounts/update-profile/", "POST", payload);
+                    if (data && data.message) {
+                        alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</div>`;
+                        setTimeout(() => {
+                            if (settingsModalInstance) settingsModalInstance.hide();
+                            location.reload();
+                        }, 1800);
+                    } else if (data) {
+                        alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-1"></i> ${data.detail || JSON.stringify(data)}</div>`;
+                    }
+                } catch (err) {
+                    alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-1"></i> ${err}</div>`;
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = "Save Settings";
+            });
+        </script>
+
+        {% endblock %}
