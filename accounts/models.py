@@ -47,8 +47,14 @@ class GlobalSetting(models.Model):
     remaining_days_updated_at = models.DateField(null=True, blank=True)
     qr_code = models.ImageField(upload_to='qr/', null=True, blank=True)
 
+    @classmethod
+    def get_settings(cls):
+        obj, _ = cls.objects.get_or_create(id=1)
+        return obj
+
     def __str__(self):
         return f"Global Settings (Remaining Days: {self.remaining_days})"
+
 
     def save(self, *args, **kwargs):
         if self.pk:

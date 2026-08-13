@@ -16,6 +16,8 @@ urlpatterns = [
     path('api/deposits/', include('deposits.urls')),
     path('api/loans/', include('loans.urls')),
     path('api/investments/', include('investments.urls')),
+    path('api/notifications/', include('notifications_app.urls')),
+
 
     # 🔥 ADD THIS (JWT AUTH)
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

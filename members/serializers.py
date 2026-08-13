@@ -8,6 +8,7 @@ class MemberSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.email", read_only=True)
     first_name = serializers.CharField(source="user.first_name", read_only=True)
     last_name = serializers.CharField(source="user.last_name", read_only=True)
+    is_staff = serializers.BooleanField(source="user.is_staff", read_only=True)
 
     class Meta:
         model = Member
@@ -18,6 +19,7 @@ class MemberSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "is_staff",
             "phone",
             "address",
             "join_date",

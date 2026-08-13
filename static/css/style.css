@@ -240,17 +240,45 @@ footer {
   margin-bottom: 0;
 }
 
+/* All table headers — ensure text is always visible */
 .table thead th {
   font-size: 0.82rem;
   white-space: nowrap;
   font-weight: 600;
-  background: #f8fafc;
+  color: #1e293b !important;
+  background-color: #f1f5f9;
   border-bottom: 2px solid #e2e8f0;
+}
+
+/* Dark table headers — bright white text on dark slate */
+.table thead.table-dark th,
+.table-dark thead th,
+.table-dark th {
+  color: #ffffff !important;
+  background-color: #1e293b !important;
+  border-bottom: 2px solid #334155;
 }
 
 .table tbody td {
   font-size: 0.84rem;
   vertical-align: middle;
+  color: #1e293b;
+}
+
+
+/* Nav tabs inside card headers */
+.nav-tabs .nav-link {
+  color: #374151 !important;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link.active {
+  color: #111827 !important;
+  font-weight: 700;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #111827 !important;
 }
 
 /* ============================================================
@@ -389,6 +417,12 @@ footer {
     font-size: 0.75rem;
     padding: 0.45rem 0.5rem;
   }
+
+  .table thead.table-dark th,
+  .table-dark thead th {
+    color: #ffffff !important;
+  }
+
 
   .table tbody td {
     font-size: 0.78rem;

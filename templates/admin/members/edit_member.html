@@ -15,21 +15,40 @@
         <h2 class="mb-4">✏️ Edit Member</h2>
 
         <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card border-0 shadow">
+            <div class="col-lg-9">
+                <div id="editAlert"></div>
+
+                <!-- ── Basic Info ── -->
+                <div class="card border-0 shadow mb-4">
+                    <div class="card-header bg-white fw-bold">
+                        <i class="bi bi-person-circle me-1 text-primary"></i> Basic Information
+                    </div>
                     <div class="card-body p-4">
-
-                        <div id="editAlert"></div>
-
                         <form id="editMemberForm">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold">Member ID</label>
-                                    <input type="text" class="form-control" id="fieldMemberId" readonly>
+                                    <input type="text" class="form-control bg-light" id="fieldMemberId" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Username</label>
+                                    <input type="text" class="form-control bg-light" id="fieldUsername" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <select class="form-select" id="fieldStatus">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Username / Login Email</label>
-                                    <input type="text" class="form-control" id="fieldUsername" readonly>
+                                    <label class="form-label fw-semibold">First Name</label>
+                                    <input type="text" class="form-control" id="fieldFirstName"
+                                        placeholder="First name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Last Name</label>
+                                    <input type="text" class="form-control" id="fieldLastName" placeholder="Last name">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Phone</label>
@@ -39,25 +58,66 @@
                                     <label class="form-label fw-semibold">Address</label>
                                     <input type="text" class="form-control" id="fieldAddress" placeholder="Address">
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Status</label>
-                                    <select class="form-select" id="fieldStatus">
-                                        <option value="true">Active</option>
-                                        <option value="false">Inactive</option>
-                                    </select>
-                                </div>
                             </div>
 
                             <div class="mt-4 d-flex gap-2">
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="bi bi-check-circle"></i> Save Changes
+                                <button type="submit" class="btn btn-primary px-4" id="saveBasicBtn">
+                                    <i class="bi bi-check-circle"></i> Save Basic Info
                                 </button>
                                 <a href="/members/" class="btn btn-outline-secondary">Cancel</a>
                             </div>
                         </form>
-
                     </div>
                 </div>
+
+                <!-- ── Account & Credentials ── -->
+                <div class="card border-0 shadow mb-4">
+                    <div class="card-header bg-white fw-bold">
+                        <i class="bi bi-shield-lock me-1 text-warning"></i> Account & Credentials
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="credentialsForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Email Address</label>
+                                    <input type="email" class="form-control" id="fieldEmail"
+                                        placeholder="email@example.com">
+                                    <small class="text-muted">Used for login identification.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">New Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="fieldPassword"
+                                            placeholder="Leave blank to keep unchanged">
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn"
+                                            onclick="togglePassword()">
+                                            <i class="bi bi-eye" id="eyeIcon"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Min. 8 characters. Leave blank to keep current
+                                        password.</small>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="fieldIsStaff" role="switch">
+                                        <label class="form-check-label fw-semibold" for="fieldIsStaff">
+                                            Admin / Staff Access
+                                        </label>
+                                        <div class="text-muted small">Grants this user full admin dashboard access.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-warning px-4" id="saveCredBtn">
+                                    <i class="bi bi-key"></i> Update Credentials & Permissions
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -76,29 +136,99 @@
 
         document.getElementById("fieldMemberId").value = member.member_id;
         document.getElementById("fieldUsername").value = member.username;
+        document.getElementById("fieldFirstName").value = member.first_name || "";
+        document.getElementById("fieldLastName").value = member.last_name || "";
         document.getElementById("fieldPhone").value = member.phone || "";
         document.getElementById("fieldAddress").value = member.address || "";
+        document.getElementById("fieldEmail").value = member.email || "";
         document.getElementById("fieldStatus").value = member.is_active_member ? "true" : "false";
+        document.getElementById("fieldIsStaff").checked = !!member.is_staff;
     };
 
+    // ── Save Basic Info ──
     document.getElementById("editMemberForm").addEventListener("submit", async function (e) {
         e.preventDefault();
+        const btn = document.getElementById("saveBasicBtn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
 
         const payload = {
+            first_name: document.getElementById("fieldFirstName").value,
+            last_name: document.getElementById("fieldLastName").value,
             phone: document.getElementById("fieldPhone").value,
             address: document.getElementById("fieldAddress").value,
             is_active_member: document.getElementById("fieldStatus").value === "true",
         };
 
-        const result = await apiRequest(`/members/${memberId}/update/`, "PATCH", payload);
-        const alertDiv = document.getElementById("editAlert");
-
-        if (result && !result.detail) {
-            alertDiv.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle"></i> Member updated successfully!</div>`;
-            setTimeout(() => window.location.href = `/members/profile/${memberId}/`, 1500);
-        } else {
-            alertDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle"></i> Failed to update: ${JSON.stringify(result)}</div>`;
-        }
+        const result = await adminUpdate(payload);
+        showAlert(result);
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-check-circle"></i> Save Basic Info`;
     });
+
+    // ── Save Credentials & Permissions ──
+    document.getElementById("credentialsForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const btn = document.getElementById("saveCredBtn");
+        const password = document.getElementById("fieldPassword").value;
+
+        if (password && password.length < 8) {
+            showAlert({ detail: "Password must be at least 8 characters." });
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Updating...`;
+
+        const payload = {
+            email: document.getElementById("fieldEmail").value,
+            is_staff: document.getElementById("fieldIsStaff").checked,
+        };
+        if (password) payload.password = password;
+
+        const result = await adminUpdate(payload);
+        showAlert(result);
+        if (result && !result.detail) {
+            document.getElementById("fieldPassword").value = "";
+        }
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-key"></i> Update Credentials & Permissions`;
+    });
+
+    async function adminUpdate(payload) {
+        const token = localStorage.getItem("access");
+        const res = await fetch(`/api/members/${memberId}/admin-update/`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token,
+            },
+            body: JSON.stringify(payload),
+        });
+        return await res.json();
+    }
+
+    function showAlert(result) {
+        const alertDiv = document.getElementById("editAlert");
+        if (result && result.message) {
+            alertDiv.innerHTML = `<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>${result.message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        } else {
+            const err = result ? (result.detail || JSON.stringify(result)) : "Unknown error";
+            alertDiv.innerHTML = `<div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-x-circle-fill me-2"></i>${err}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        }
+        alertDiv.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function togglePassword() {
+        const input = document.getElementById("fieldPassword");
+        const icon = document.getElementById("eyeIcon");
+        if (input.type === "password") {
+            input.type = "text";
+            icon.className = "bi bi-eye-slash";
+        } else {
+            input.type = "password";
+            icon.className = "bi bi-eye";
+        }
+    }
 </script>
 {% endblock %}

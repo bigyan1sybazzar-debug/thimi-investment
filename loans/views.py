@@ -26,16 +26,18 @@ class LoanListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         from django.utils import timezone
-        if not self.request.user.is_staff:
+        kwargs = {}
+        if not serializer.validated_data.get('name'):
             name = f"{self.request.user.first_name} {self.request.user.last_name}".strip() or self.request.user.username
-            serializer.save(
-                name=name,
-                status="Pending",
-                interest_paid=0,
-                disbursement_date=timezone.now().date()
-            )
-        else:
-            serializer.save()
+            kwargs['name'] = name
+        if not serializer.validated_data.get('disbursement_date'):
+            kwargs['disbursement_date'] = timezone.now().date()
+        if not self.request.user.is_staff:
+            kwargs['status'] = "Pending"
+            kwargs['interest_paid'] = 0
+
+        serializer.save(**kwargs)
+
 
 
 class LoanDetailView(generics.RetrieveUpdateDestroyAPIView):
