@@ -126,15 +126,15 @@ CSRF_TRUSTED_ORIGINS = [
     'https://thimi-investment-aa.up.railway.app',
 ] + [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
 
-# Email Settings - Resend SMTP Relay (hardcoded to prevent Railway env variable overrides)
+# Email Settings - EverestAstro cPanel SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.resend.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'resend'
-EMAIL_HOST_PASSWORD = os.environ.get('RESEND_API_KEY', 're_' + 'i1VX4aSc_' + 'UVCUsAnhQtkUjHCsHEWxH7gP')
-DEFAULT_FROM_EMAIL = 'Thimi Investment Group <onboarding@resend.dev>'
+EMAIL_HOST = 'mail.everestastro.com'
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_USE_TLS = False
+EMAIL_HOST_USER = 'bigyan@everestastro.com'
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'Qwater123@')
+DEFAULT_FROM_EMAIL = 'Thimi Investment Group <bigyan@everestastro.com>'
 EMAIL_TIMEOUT = 10
 
 

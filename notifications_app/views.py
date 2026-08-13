@@ -1,4 +1,5 @@
 import datetime
+import urllib.request as _urllib_req
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
@@ -279,4 +280,19 @@ class SendBroadcastEmailView(APIView):
             import traceback
             traceback.print_exc()
             return Response({'detail': f"Send broadcast error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ServerIPView(APIView):
+    """
+    Temporary diagnostic endpoint: returns Railway's outbound IP address.
+    Used for whitelisting in cPanel CSF Firewall.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        try:
+            ip = _urllib_req.urlopen('https://api.ipify.org', timeout=5).read().decode()
+            return Response({'server_outbound_ip': ip, 'message': 'Add this IP to CSF Firewall whitelist in WHM'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
