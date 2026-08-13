@@ -29,8 +29,14 @@ class Command(BaseCommand):
             try:
                 member = Member.objects.select_related('user').get(member_id=member_id)
                 user = member.user
+                changed = False
                 if user.email != email:
                     user.email = email
+                    changed = True
+                if user.username != email:
+                    user.username = email
+                    changed = True
+                if changed:
                     user.save()
                     updated_count += 1
                     self.stdout.write(self.style.SUCCESS(f"Updated {member_id} ({user.username}) email to {email}"))
