@@ -181,20 +181,36 @@
         loadNotificationStatus();
     };
 
+    async function safeParseResponse(res) {
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+            return await res.json();
+        }
+        const text = await res.text();
+        return { detail: `Server returned non-JSON response (${res.status}): ${text.substring(0, 200)}` };
+    }
+
     async function loadNotificationStatus() {
         const token = localStorage.getItem("access");
+        if (!token) return;
         try {
             const res = await fetch("/api/notifications/status/", {
                 headers: { "Authorization": "Bearer " + token }
             });
+            if (res.status === 401) {
+                window.location.href = "/admin/login/";
+                return;
+            }
             if (!res.ok) return;
-            const data = await res.json();
-            document.getElementById("statTotalMembers").innerText = data.total_members;
-            document.getElementById("statPendingCount").innerText = data.pending_count;
-            document.getElementById("statUrgentCount").innerText = data.urgent_count;
-            document.getElementById("statDaysLeft").innerText = `${data.days_left} Days`;
-            if (data.smtp_user) {
-                document.getElementById("smtpUserBadge").innerText = data.smtp_user;
+            const data = await safeParseResponse(res);
+            if (data.total_members !== undefined) {
+                document.getElementById("statTotalMembers").innerText = data.total_members;
+                document.getElementById("statPendingCount").innerText = data.pending_count;
+                document.getElementById("statUrgentCount").innerText = data.urgent_count;
+                document.getElementById("statDaysLeft").innerText = `${data.days_left} Days`;
+                if (data.smtp_user) {
+                    document.getElementById("smtpUserBadge").innerText = data.smtp_user;
+                }
             }
         } catch (e) {
             console.error(e);
@@ -220,7 +236,15 @@
                 },
                 body: JSON.stringify({ target: target })
             });
-            const data = await res.json();
+
+            if (res.status === 401) {
+                alertDiv.innerHTML = `<div class="alert alert-warning mb-4"><i class="bi bi-exclamation-triangle me-2"></i> Session expired. Please <a href="/admin/login/">login again</a>.</div>`;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-send-fill me-2"></i> Send Reminder Email Notifications Now`;
+                return;
+            }
+
+            const data = await safeParseResponse(res);
             if (res.ok) {
                 alertDiv.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show mb-4">
@@ -267,7 +291,6 @@
             message: document.getElementById("broadcastMessage").value,
         };
 
-
         const token = localStorage.getItem("access");
         try {
             const res = await fetch("/api/notifications/send-broadcast/", {
@@ -278,7 +301,15 @@
                 },
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
+
+            if (res.status === 401) {
+                alertDiv.innerHTML = `<div class="alert alert-warning mb-4"><i class="bi bi-exclamation-triangle me-2"></i> Session expired. Please <a href="/admin/login/">login again</a>.</div>`;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-broadcast me-2"></i> Send Broadcast Email`;
+                return;
+            }
+
+            const data = await safeParseResponse(res);
             if (res.ok) {
                 alertDiv.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show mb-4">
@@ -303,5 +334,6 @@
         btn.disabled = false;
         btn.innerHTML = `<i class="bi bi-broadcast me-2"></i> Send Broadcast Email`;
     });
+
 </script>
 {% endblock %}
