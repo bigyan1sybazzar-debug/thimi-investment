@@ -134,7 +134,8 @@ EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'resend'
 EMAIL_HOST_PASSWORD = os.environ.get('RESEND_API_KEY', 're_' + 'i1VX4aSc_' + 'UVCUsAnhQtkUjHCsHEWxH7gP')
-DEFAULT_FROM_EMAIL = 'Thimi Investment Group <admin@bigyann.com.np>'
+DEFAULT_FROM_EMAIL = 'Thimi Investment Group <onboarding@resend.dev>'
+
 
 
 

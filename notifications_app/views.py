@@ -252,19 +252,28 @@ class SendBroadcastEmailView(APIView):
                     )
                     sent_count += 1
                 except Exception as e:
+                    import traceback
+                    print(f"Failed to send email to {email}: {e}")
                     failed.append({'email': email, 'error': str(e)})
 
             recipient_summary = ", ".join(recipients[:5])
             if len(recipients) > 5:
                 recipient_summary += f" and {len(recipients) - 5} more"
 
+            msg = f"Broadcast process finished. Sent: {sent_count}, Failed: {len(failed)}."
+            if sent_count > 0:
+                msg = f"Broadcast email sent to {sent_count} recipient(s) [{recipient_summary}]."
+            elif len(failed) > 0:
+                msg = f"Could not deliver to recipient(s). Error: {failed[0]['error']}"
+
             return Response({
-                'message': f"Broadcast email sent to {sent_count} recipient(s) [{recipient_summary}].",
+                'message': msg,
                 'sent_count': sent_count,
                 'recipients': recipients,
                 'failed_count': len(failed),
                 'failed_details': failed
-            })
+            }, status=status.HTTP_200_OK if sent_count > 0 else status.HTTP_400_BAD_REQUEST)
+
 
         except Exception as e:
             import traceback
