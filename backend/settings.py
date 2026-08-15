@@ -126,16 +126,19 @@ CSRF_TRUSTED_ORIGINS = [
     'https://thimi-investment-aa.up.railway.app',
 ] + [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
 
-# Email Settings (Gmail SMTP)
+# Email Settings (Gmail SMTP). Configure every value in Railway environment variables.
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'bigyan.neupane6@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'bojs' + 'mqxj' + 'btsh' + 'epfh')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <bigyan.neupane6@gmail.com>')
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '15'))
+
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ValueError('EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled.')
 
 
 

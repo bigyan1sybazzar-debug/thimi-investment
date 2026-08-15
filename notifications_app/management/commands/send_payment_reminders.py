@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+from notifications_app.views import email_error_detail
 from accounts.models import Member, GlobalSetting
 from deposits.models import Deposit
 
@@ -92,6 +93,6 @@ class Command(BaseCommand):
                     sent_count += 1
                     self.stdout.write(self.style.SUCCESS(f"Sent reminder email to {name} ({m.user.email})"))
                 except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Failed sending to {m.user.email}: {e}"))
+                    self.stdout.write(self.style.ERROR(f"Failed sending to {m.user.email}: {email_error_detail(e)}"))
 
         self.stdout.write(self.style.SUCCESS(f"Finished. Total reminder emails sent: {sent_count}"))

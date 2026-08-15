@@ -4,6 +4,7 @@ from .views import (
     SendPaymentRemindersView,
     SendBroadcastEmailView,
     ServerIPView,
+    SMTPDiagnosticView,
     SystemNotificationListView,
     SendMemberMessageView,
     AdminReplyMessageView,
@@ -17,6 +18,7 @@ urlpatterns = [
     path('send-message/', SendMemberMessageView.as_view(), name='send_member_message'),
     path('reply/<int:pk>/', AdminReplyMessageView.as_view(), name='admin_reply_message'),
     path('server-ip/', ServerIPView.as_view(), name='server_ip'),
+    path('smtp-diagnostic/', SMTPDiagnosticView.as_view(), name='smtp_diagnostic'),
 ]
 
 

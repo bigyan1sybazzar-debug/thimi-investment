@@ -1,5 +1,20 @@
 import datetime
+import socket
 import urllib.request as _urllib_req
+
+from smtplib import SMTPException
+
+
+def email_error_detail(exc):
+    """Return an actionable, credential-safe SMTP error for the admin UI."""
+    text = str(exc)
+    if isinstance(exc, OSError) and getattr(exc, 'errno', None) == 101:
+        return f"SMTP network is unreachable ({settings.EMAIL_HOST}:{settings.EMAIL_PORT}). Check Railway outbound SMTP access; Gmail credentials are not the cause."
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return f"SMTP connection timed out ({settings.EMAIL_HOST}:{settings.EMAIL_PORT}). Check Railway egress and Gmail SMTP availability."
+    if isinstance(exc, SMTPException):
+        return f"Gmail SMTP rejected the request: {text}"
+    return f"Email delivery failed: {text}"
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
@@ -193,7 +208,7 @@ class AdminReplyMessageView(APIView):
                 fail_silently=False,
             )
         except Exception as e:
-            return Response({"detail": f"Email delivery failed: {str(e)}"}, status=500)
+            return Response({"detail": email_error_detail(e)}, status=502)
 
         # Mark as read
         if not n.is_read:
@@ -369,7 +384,7 @@ class SendPaymentRemindersView(APIView):
                     )
                     sent_count += 1
                 except Exception as e:
-                    failed.append({'member': m['name'], 'email': email, 'error': str(e)})
+                    failed.append({'member': m['name'], 'email': email, 'error': email_error_detail(e)})
 
             return Response({
                 'message': f"Sent {sent_count} reminder email(s) successfully.",
@@ -449,8 +464,8 @@ class SendBroadcastEmailView(APIView):
                     sent_count += 1
                 except Exception as e:
                     import traceback
-                    print(f"Failed to send email to {email}: {e}")
-                    failed.append({'email': email, 'error': str(e)})
+                    print(f"Failed to send email to {email}: {email_error_detail(e)}")
+                    failed.append({'email': email, 'error': email_error_detail(e)})
 
             recipient_summary = ", ".join(recipients[:5])
             if len(recipients) > 5:
@@ -475,6 +490,34 @@ class SendBroadcastEmailView(APIView):
             import traceback
             traceback.print_exc()
             return Response({'detail': f"Send broadcast error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SMTPDiagnosticView(APIView):
+    """Check Gmail SMTP DNS/TCP reachability without exposing credentials."""
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        host = settings.EMAIL_HOST
+        port = settings.EMAIL_PORT
+        try:
+            addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            with socket.create_connection((host, port), timeout=settings.EMAIL_TIMEOUT):
+                pass
+            return Response({
+                'ok': True,
+                'host': host,
+                'port': port,
+                'resolved_addresses': len(addresses),
+                'message': 'SMTP host is reachable. Credentials were not tested or exposed.',
+            })
+        except Exception as exc:
+            return Response({
+                'ok': False,
+                'host': host,
+                'port': port,
+                'error': email_error_detail(exc),
+                'message': 'Network reachability failed before SMTP authentication.',
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class ServerIPView(APIView):
