@@ -15,7 +15,6 @@ class DepositSerializer(serializers.ModelSerializer):
             "approved_at",
             "created_at",
             "updated_at",
-            "payment_date",
         )
 
     def validate_saving_month(self, value):
