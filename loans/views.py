@@ -4,10 +4,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Loan
 from .serializers import LoanSerializer
+from notifications_app.email_utils import (
+    send_loan_applied_emails,
+    send_loan_status_email,
+)
 
 
 class LoanListCreateView(generics.ListCreateAPIView):
-    """GET = all users can view. POST = admin only."""
+    """GET = all users can view. POST = admin or authenticated member."""
     serializer_class = LoanSerializer
 
     def get_queryset(self):
@@ -36,8 +40,10 @@ class LoanListCreateView(generics.ListCreateAPIView):
             kwargs['status'] = "Pending"
             kwargs['interest_paid'] = 0
 
-        serializer.save(**kwargs)
+        loan = serializer.save(**kwargs)
 
+        # Trigger email notifications
+        send_loan_applied_emails(loan, self.request.user)
 
 
 class LoanDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -52,4 +58,14 @@ class LoanDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def partial_update(self, request, *args, **kwargs):
         kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
+        old_instance = self.get_object()
+        old_status = old_instance.status
+        response = self.update(request, *args, **kwargs)
+
+        if response.status_code in (200, 201):
+            updated_instance = self.get_object()
+            new_status = updated_instance.status
+            if new_status and new_status.lower() != (old_status or "").lower():
+                send_loan_status_email(updated_instance, new_status, remarks=request.data.get("remarks"))
+
+        return response

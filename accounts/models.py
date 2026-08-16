@@ -26,6 +26,9 @@ class Member(models.Model):
 
     remaining_days_updated_at = models.DateField(null=True, blank=True)
 
+    gov_id_front = models.ImageField(upload_to='gov_ids/', null=True, blank=True)
+    gov_id_back = models.ImageField(upload_to='gov_ids/', null=True, blank=True)
+
     def __str__(self):
         return f"{self.member_id} - {self.user.username}"
 

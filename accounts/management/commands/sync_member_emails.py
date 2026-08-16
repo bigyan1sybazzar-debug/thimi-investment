@@ -7,7 +7,7 @@ MEMBER_EMAILS = {
     'M0003': 'bkalpa.khadka@gmail.com',
     'M0004': 'bishalpandey32166@gmail.com',
     'M0005': 'sharmadevendra410@gmail.com',
-    'M0006': 'dipin@thimi.com',
+    'M0006': 'dipin432@gmail.com',
     'M0007': 'nishhan.neupane@gmail.com',
     'M0008': 'mepaone3@gmail.com',
     'M0009': 'prabn0115@gmail.com',
@@ -15,7 +15,7 @@ MEMBER_EMAILS = {
     'M0011': 'Prashantadhikari121@gmail.com',
     'M0012': 'adhikaripratik314@gmail.com',
     'M0013': 'sandeshupadhya1@gmail.com',
-    'M0014': 'vikram@thimi.com',
+    'M0014': 'vs.raimajhi@gmail.com',
     'M0015': 'dahalyuben@gmail.com',
 }
 

@@ -60,9 +60,25 @@
                                 </div>
                             </div>
 
+                            <hr class="my-4">
+                            <h6 class="fw-bold text-success mb-3"><i class="bi bi-card-heading me-1"></i> Government ID
+                                Photos</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small text-muted">ID Front Photo</label>
+                                    <input type="file" class="form-control" id="fieldGovIdFront" accept="image/*">
+                                    <div id="adminGovIdFrontPreview" class="mt-2"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small text-muted">ID Back Photo</label>
+                                    <input type="file" class="form-control" id="fieldGovIdBack" accept="image/*">
+                                    <div id="adminGovIdBackPreview" class="mt-2"></div>
+                                </div>
+                            </div>
+
                             <div class="mt-4 d-flex gap-2">
                                 <button type="submit" class="btn btn-primary px-4" id="saveBasicBtn">
-                                    <i class="bi bi-check-circle"></i> Save Basic Info
+                                    <i class="bi bi-check-circle"></i> Save Basic Info &amp; ID Photos
                                 </button>
                                 <a href="/members/" class="btn btn-outline-secondary">Cancel</a>
                             </div>
@@ -143,6 +159,25 @@
         document.getElementById("fieldEmail").value = member.email || "";
         document.getElementById("fieldStatus").value = member.is_active_member ? "true" : "false";
         document.getElementById("fieldIsStaff").checked = !!member.is_staff;
+
+        if (member.gov_id_front) {
+            document.getElementById("adminGovIdFrontPreview").innerHTML = `
+                <div class="d-flex align-items-center gap-2">
+                    <img src="${member.gov_id_front}" class="rounded border" style="height: 60px; width: 90px; object-fit: cover;" />
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>
+                    <a href="${member.gov_id_front}" target="_blank" class="btn btn-sm btn-link text-decoration-none">View Full Image</a>
+                </div>
+            `;
+        }
+        if (member.gov_id_back) {
+            document.getElementById("adminGovIdBackPreview").innerHTML = `
+                <div class="d-flex align-items-center gap-2">
+                    <img src="${member.gov_id_back}" class="rounded border" style="height: 60px; width: 90px; object-fit: cover;" />
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>
+                    <a href="${member.gov_id_back}" target="_blank" class="btn btn-sm btn-link text-decoration-none">View Full Image</a>
+                </div>
+            `;
+        }
     };
 
     // ── Save Basic Info ──
@@ -152,18 +187,30 @@
         btn.disabled = true;
         btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
 
-        const payload = {
-            first_name: document.getElementById("fieldFirstName").value,
-            last_name: document.getElementById("fieldLastName").value,
-            phone: document.getElementById("fieldPhone").value,
-            address: document.getElementById("fieldAddress").value,
-            is_active_member: document.getElementById("fieldStatus").value === "true",
-        };
+        const formData = new FormData();
+        formData.append("first_name", document.getElementById("fieldFirstName").value);
+        formData.append("last_name", document.getElementById("fieldLastName").value);
+        formData.append("phone", document.getElementById("fieldPhone").value);
+        formData.append("address", document.getElementById("fieldAddress").value);
+        formData.append("is_active_member", document.getElementById("fieldStatus").value === "true");
 
-        const result = await adminUpdate(payload);
+        const frontFile = document.getElementById("fieldGovIdFront").files[0];
+        const backFile = document.getElementById("fieldGovIdBack").files[0];
+        if (frontFile) formData.append("gov_id_front", frontFile);
+        if (backFile) formData.append("gov_id_back", backFile);
+
+        const token = localStorage.getItem("access");
+        const res = await fetch(`/api/members/${memberId}/admin-update/`, {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer " + token,
+            },
+            body: formData,
+        });
+        const result = await res.json();
         showAlert(result);
         btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-check-circle"></i> Save Basic Info`;
+        btn.innerHTML = `<i class="bi bi-check-circle"></i> Save Basic Info &amp; ID Photos`;
     });
 
     // ── Save Credentials & Permissions ──

@@ -201,28 +201,120 @@
         <div class="card-body tab-content" id="investTabsContent">
             <!-- Loans -->
             <div class="tab-pane fade show active" id="loansTab" role="tabpanel" aria-labelledby="loans-tab">
-                <div class="row mb-4">
-                    <div class="col-md-4 mb-2">
-                        <div class="border rounded p-3 text-center bg-light">
-                            <span class="text-muted small d-block">Total Loan Principal</span>
-                            <h4 class="text-success mt-1 fw-bold" id="groupTotalPrincipal">Rs. 0</h4>
+                <!-- Available Loan Schemes -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm bg-light-subtle border-start border-primary border-4">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-primary">Short Term</span>
+                                    <span class="fw-bold text-primary">14% p.a.</span>
+                                </div>
+                                <h5 class="fw-bold mb-1 text-dark">Up to Rs. 50,000</h5>
+                                <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>Tenure: <strong>3
+                                        Months</strong></p>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="border rounded p-3 text-center bg-light">
-                            <span class="text-muted small d-block">Interest Collected so far</span>
-                            <h4 class="text-success mt-1 fw-bold" id="groupTotalInterest">Rs. 0</h4>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm bg-light-subtle border-start border-success border-4">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-success">Medium Term</span>
+                                    <span class="fw-bold text-success">12% p.a.</span>
+                                </div>
+                                <h5 class="fw-bold mb-1 text-dark">Up to Rs. 150,000</h5>
+                                <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>Tenure: <strong>6
+                                        Months</strong></p>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="border rounded p-3 text-center bg-light">
-                            <span class="text-muted small d-block">Annual Interest Rate</span>
-                            <h4 class="text-success mt-1 fw-bold">12% p.a.</h4>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm bg-light-subtle border-start border-warning border-4">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-warning text-dark">Long Term (Max)</span>
+                                    <span class="fw-bold text-dark">10% p.a.</span>
+                                </div>
+                                <h5 class="fw-bold mb-1 text-dark">Up to Rs. 250,000</h5>
+                                <p class="text-muted small mb-0"><i class="bi bi-calendar3 me-1"></i>Tenure: <strong>1
+                                        Year (12 Mos)</strong></p>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Apply for Loan Form (Above Loan Ledger) -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div
+                        class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-file-earmark-plus-fill me-2"></i>Apply for
+                            Loan</h6>
+                        <span class="badge bg-info text-dark">Instant Request</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="inlineLoanAlert"></div>
+                        <form id="inlineLoanForm">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Select Loan Scheme <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="inlineLoanPlan" required
+                                        onchange="updateLoanPlanDetails('inline')">
+                                        <option value="short" selected>Short Term — Max Rs. 50,000 (3 Mos @ 14%)
+                                        </option>
+                                        <option value="medium">Medium Term — Max Rs. 150,000 (6 Mos @ 12%)</option>
+                                        <option value="long">Long Term — Max Rs. 250,000 (1 Year @ 10%)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Requested Amount (Rs.) <span
+                                            class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="inlineLoanAmount" required min="1000"
+                                        max="50000" value="50000" placeholder="50000"
+                                        oninput="calculateLoanEstimate('inline')">
+                                    <small class="text-muted" id="inlineAmountHelp">Max limit: Rs. 50,000</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Estimated Interest</label>
+                                    <div class="p-2 bg-light rounded border text-success fw-bold"
+                                        id="inlineInterestEstimate">
+                                        Rs. 1,750 (14% p.a. for 3 mos)
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Remarks / Reason for Loan</label>
+                                    <textarea class="form-control" id="inlineLoanRemarks" rows="2"
+                                        placeholder="Describe loan purpose or notes..."></textarea>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="submit" class="btn btn-primary px-4" id="inlineSubmitLoanBtn">
+                                        <i class="bi bi-send me-1"></i> Submit Loan Application
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- My Loans Section (If user has active / pending loan) -->
+                <div class="card border-0 shadow-sm mb-4" id="myLoansCard">
+                    <div
+                        class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-wallet2 me-2 text-success"></i>My Personal
+                            Loans &amp; Status</h6>
+                        <span class="badge bg-secondary" id="myLoanCountBadge">Checking...</span>
+                    </div>
+                    <div class="card-body p-4" id="myLoansContent">
+                        <div class="text-center py-3 text-muted">
+                            <div class="spinner-border spinner-border-sm me-2 text-primary"></div>Loading your loan
+                            info...
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Loan Ledger</h6>
+                    <h6 class="mb-0 fw-bold">Loan Ledger (All Members)</h6>
                     <button class="btn btn-sm btn-outline-success border" onclick="openClaimLoanModal()">
                         <i class="bi bi-cash-coin"></i> Request / Claim Loan
                     </button>
@@ -334,16 +426,33 @@
                     <div class="modal-body">
                         <div id="modalLoanAlert"></div>
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Loan Scheme <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="modalLoanPlan" required
+                                onchange="updateLoanPlanDetails('modal')">
+                                <option value="short" selected>Short Term — Max Rs. 50,000 (3 Mos @ 14%)</option>
+                                <option value="medium">Medium Term — Max Rs. 150,000 (6 Mos @ 12%)</option>
+                                <option value="long">Long Term — Max Rs. 250,000 (1 Year @ 10%)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Requested Loan Amount (Rs.) <span
                                     class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="modalLoanAmount" required min="1000"
-                                placeholder="100000">
+                                max="50000" value="50000" placeholder="50000" oninput="calculateLoanEstimate('modal')">
+                            <small class="text-muted" id="modalAmountHelp">Max limit: Rs. 50,000</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Estimated Interest</label>
+                            <div class="p-2 bg-light rounded border text-success fw-bold" id="modalInterestEstimate">
+                                Rs. 1,750 (14% p.a. for 3 mos)
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Note / Remarks (Reason for loan, collateral,
                                 etc.)</label>
-                            <textarea class="form-control" id="modalLoanRemarks" rows="3"
-                                placeholder="I need a short term loan for..."></textarea>
+                            <textarea class="form-control" id="modalLoanRemarks" rows="2"
+                                placeholder="I need a loan for..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
@@ -384,7 +493,7 @@
                         <hr />
 
                         <!-- Change Password -->
-                        <div>
+                        <div class="mb-4">
                             <h6 class="fw-bold text-warning mb-2"><i class="bi bi-key me-1"></i> Change Password
                             </h6>
                             <div class="mb-3">
@@ -396,6 +505,28 @@
                                 <label class="form-label small fw-semibold text-muted">New Password</label>
                                 <input type="password" class="form-control" id="settingsNewPassword"
                                     placeholder="Min. 8 characters">
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <!-- Government ID Upload -->
+                        <div>
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-card-heading me-1"></i> Government ID
+                                Upload</h6>
+                            <p class="small text-muted mb-3">Upload clear images of your Citizenship / National ID /
+                                Driving License (Front &amp; Back) for verification.</p>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-muted">ID Front Photo</label>
+                                <input type="file" class="form-control" id="settingsGovIdFront" accept="image/*">
+                                <div id="govIdFrontPreview" class="mt-2"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-muted">ID Back Photo</label>
+                                <input type="file" class="form-control" id="settingsGovIdBack" accept="image/*">
+                                <div id="govIdBackPreview" class="mt-2"></div>
                             </div>
                         </div>
                     </div>
@@ -532,32 +663,44 @@
 
                         const initialDays = member.remaining_days || 0;
                         const daysLeft = Math.max(0, initialDays - daysElapsed);
+                        const daysOverdue = Math.max(0, daysElapsed - initialDays);
 
-                        // Decide fine and theme based on elapsed days
+                        // Decide fine and theme based on overdue days (after deadline)
                         let fine = 0;
-                        let fineMsg = "";
                         let bgGradient = "";
                         let iconHtml = "";
                         let borderStyle = "";
                         let textClass = "";
 
-                        if (daysElapsed <= 5) {
+                        let fineDisplay = "Rs. 0";
+                        let fineSubtext = "";
+                        let fineColorClass = "text-success";
+
+                        if (daysOverdue <= 5) {
                             fine = 0;
-                            fineMsg = "Rs. 0 (Within 5-day grace period)";
+                            fineDisplay = "Rs. 0";
+                            const graceLeft = 5 - daysOverdue;
+                            fineSubtext = `Within 5-day grace period (${graceLeft} day${graceLeft !== 1 ? 's' : ''} remaining for fine)`;
+                            fineColorClass = "text-success";
                             bgGradient = "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)";
                             iconHtml = '<i class="bi bi-clock-history text-info-emphasis"></i>';
                             borderStyle = "border: 1px solid #4dd0e1;";
                             textClass = "text-dark";
-                        } else if (daysElapsed > 5 && daysElapsed <= 10) {
+                        } else if (daysOverdue > 5 && daysOverdue <= 10) {
                             fine = 200;
-                            fineMsg = "Rs. 200 (Day 6 to 10 of payment period)";
+                            fineDisplay = "Rs. 200";
+                            fineSubtext = `Day ${daysOverdue} after deadline (Days 6-10 fine period)`;
+                            fineColorClass = "text-danger";
                             bgGradient = "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)";
                             iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
                             borderStyle = "border: 1px solid #ffb74d;";
                             textClass = "text-dark";
                         } else {
-                            fine = 100;
-                            fineMsg = "Rs. 100 (Unpaid after 10 days)";
+                            const dailyFineDays = daysOverdue - 10;
+                            fine = 200 + (100 * dailyFineDays);
+                            fineDisplay = `Rs. ${fine}`;
+                            fineSubtext = `Rs. 200 base + Rs. 100/day for ${dailyFineDays} day${dailyFineDays > 1 ? 's' : ''} past 10 days overdue`;
+                            fineColorClass = "text-danger";
                             bgGradient = "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)";
                             iconHtml = '<i class="bi bi-exclamation-octagon-fill text-danger"></i>';
                             borderStyle = "border: 1px solid #e57373;";
@@ -583,21 +726,24 @@
                                                 </div>
                                             </div>
                                             
-                                            <div class="row mt-2 g-2">
-                                                <div class="col-md-6 border-end">
+                                            <div class="row mt-2 g-2 align-items-center">
+                                                <div class="col-md-5 border-end">
                                                     <span class="d-block text-muted small uppercase fw-bold">Payment started on</span>
                                                     <span class="fs-6 fw-bold">${member.remaining_days_updated_at || '—'}</span>
                                                     <span class="text-muted small">(${daysElapsed} days elapsed)</span>
                                                 </div>
-                                                <div class="col-md-6 ps-md-3">
+                                                <div class="col-md-7 ps-md-3">
                                                     <span class="d-block text-muted small uppercase fw-bold">Current Fine Amount</span>
-                                                    <span class="fs-6 fw-bold text-danger">${fineMsg}</span>
+                                                    <div class="${fineColorClass} fw-bolder" style="font-size: 2.2rem; line-height: 1.1; letter-spacing: -0.5px;">
+                                                        ${fineDisplay}
+                                                    </div>
+                                                    <div class="small ${fineColorClass} fw-bold mt-1">${fineSubtext}</div>
                                                 </div>
                                             </div>
                                             
                                             <div class="mt-3 p-2 bg-white bg-opacity-50 rounded small">
                                                 <span class="fw-bold">📌 Rules Info:</span>
-                                                First 5 days: <strong>Rs. 0 fine</strong> | Days 6-10: <strong>Rs. 200 fine</strong> | After 10 days: <strong>Rs. 100 fine</strong>.
+                                                First 5 days: <strong>Rs. 0 fine</strong> | Days 6-10: <strong>Rs. 200 fine</strong> | After 10 days: <strong>Rs. 100 fine per daily</strong>.
                                             </div>
                                         </div>
                                     </div>
@@ -649,31 +795,24 @@
 
                 });
 
+                // Load Member's Personal Loans
+                const mName = ((data.member.first_name || '') + " " + (data.member.last_name || '')).trim() || data.member.username;
+                loadMyPersonalLoans(mName, data.member.username);
+
                 // Show admin redirect button if user is staff/superuser
                 if (data.member.is_staff || data.member.is_superuser) {
                     document.getElementById("goToAdminBtn").style.display = "inline-block";
                 }
 
-                // Populate Group Investments & Loans from Thimi Data
+                // Populate Group Investments & Loans
+                populateLoanLedgerTable();
+
                 const thimi = data.thimi_data;
                 if (thimi) {
-                    // Loans Summary & Table
-                    document.getElementById("groupTotalPrincipal").innerText = "Rs. " + thimi.loans.total_principal.toLocaleString();
-                    document.getElementById("groupTotalInterest").innerText = "Rs. " + thimi.loans.total_interest_paid.toLocaleString();
-
-                    let loansHtml = "";
-                    thimi.loans.records.forEach(record => {
-                        loansHtml += `
-                        <tr>
-                            <td>${record.s_no}</td>
-                            <td>${record.name}</td>
-                            <td>Rs. ${record.amount.toLocaleString()}</td>
-                            <td>${record.disbursement_date}</td>
-                            <td>Rs. ${record.interest_paid.toLocaleString()}</td>
-                            <td><span class="badge bg-${record.status === 'Closed' ? 'secondary' : 'success'}">${record.status}</span></td>
-                        </tr>`;
-                    });
-                    document.getElementById("memberLoansTable").innerHTML = loansHtml;
+                    const pEl = document.getElementById("groupTotalPrincipal");
+                    const iEl = document.getElementById("groupTotalInterest");
+                    if (pEl && thimi.loans) pEl.innerText = "Rs. " + (thimi.loans.total_principal || 0).toLocaleString();
+                    if (iEl && thimi.loans) iEl.innerText = "Rs. " + (thimi.loans.total_interest_paid || 0).toLocaleString();
 
                     // Stocks Holdings Summary & Table
                     document.getElementById("groupTotalShareInvested").innerText = "Rs. " + thimi.financial_summary.total_amount_invested_on_shares.toLocaleString();
@@ -737,46 +876,248 @@
             document.body.removeChild(link);
         }
 
+        // Loan Plan Specs
+        const LOAN_PLANS = {
+            short: { max: 50000, rate: 0.14, tenure: 0.25, tenureLabel: "3 mos", rateLabel: "14% p.a." },
+            medium: { max: 150000, rate: 0.12, tenure: 0.5, tenureLabel: "6 mos", rateLabel: "12% p.a." },
+            long: { max: 250000, rate: 0.10, tenure: 1.0, tenureLabel: "1 year", rateLabel: "10% p.a." }
+        };
+
+        function updateLoanPlanDetails(prefix) {
+            const planKey = document.getElementById(prefix + "LoanPlan").value;
+            const plan = LOAN_PLANS[planKey] || LOAN_PLANS.short;
+            const amtInput = document.getElementById(prefix + "LoanAmount");
+            const helpEl = document.getElementById(prefix + "AmountHelp");
+
+            amtInput.max = plan.max;
+            if (parseFloat(amtInput.value) > plan.max) {
+                amtInput.value = plan.max;
+            }
+            if (helpEl) {
+                helpEl.innerText = `Max limit: Rs. ${plan.max.toLocaleString()}`;
+            }
+            calculateLoanEstimate(prefix);
+        }
+
+        function calculateLoanEstimate(prefix) {
+            const planKey = document.getElementById(prefix + "LoanPlan").value;
+            const plan = LOAN_PLANS[planKey] || LOAN_PLANS.short;
+            const amtInput = document.getElementById(prefix + "LoanAmount");
+            const estDiv = document.getElementById(prefix + "InterestEstimate");
+            const amt = parseFloat(amtInput.value) || 0;
+
+            if (amt > plan.max) {
+                if (estDiv) estDiv.innerHTML = `<span class="text-danger">Exceeds max plan limit of Rs. ${plan.max.toLocaleString()}</span>`;
+                return;
+            }
+
+            const interest = Math.round(amt * plan.rate * plan.tenure);
+            if (estDiv) {
+                estDiv.innerHTML = `Rs. ${interest.toLocaleString()} (${plan.rateLabel} for ${plan.tenureLabel})`;
+            }
+        }
+
+        async function loadMyPersonalLoans(memberName, username) {
+            const container = document.getElementById("myLoansContent");
+            const badge = document.getElementById("myLoanCountBadge");
+            if (!container) return;
+
+            const allLoans = await apiRequest("/loans/");
+            if (!allLoans || !Array.isArray(allLoans)) {
+                container.innerHTML = `<div class="text-center py-2 text-muted"><i class="bi bi-info-circle me-1"></i>No loan details available.</div>`;
+                if (badge) badge.innerText = "0 Loans";
+                return;
+            }
+
+            const nameClean = (memberName || "").toLowerCase().trim();
+            const unameClean = (username || "").toLowerCase().trim();
+
+            const myLoans = allLoans.filter(loan => {
+                const bName = (loan.name || "").toLowerCase().trim();
+                return bName.includes(nameClean) || nameClean.includes(bName) || (unameClean && bName.includes(unameClean));
+            });
+
+            if (myLoans.length === 0) {
+                if (badge) {
+                    badge.innerText = "0 Active Loans";
+                    badge.className = "badge bg-secondary";
+                }
+                container.innerHTML = `
+                    <div class="p-3 text-center text-muted bg-light rounded border">
+                        <i class="bi bi-info-circle text-primary fs-4 d-block mb-1"></i>
+                        <span>No active or pending loan records found under <strong>${memberName}</strong>.</span>
+                        <div class="small text-muted mt-1">Need a loan? Submit an application using the form above.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (badge) {
+                badge.innerText = `${myLoans.length} Loan Record${myLoans.length > 1 ? 's' : ''}`;
+                badge.className = "badge bg-primary";
+            }
+
+            container.innerHTML = `
+                <div class="row g-3">
+                    ${myLoans.map(loan => {
+                const statusClass = loan.status === 'Active' ? 'success' : (loan.status === 'Pending' ? 'warning text-dark' : 'secondary');
+                const statusIcon = loan.status === 'Active' ? 'check-circle-fill' : (loan.status === 'Pending' ? 'hourglass-split' : 'x-circle');
+                const ratePct = (parseFloat(loan.annual_interest_rate || 0.12) * 100).toFixed(0);
+                const tenureMos = Math.round(parseFloat(loan.tenure_years || 0.5) * 12);
+                const principal = parseFloat(loan.amount);
+                const estInterest = Math.round(principal * parseFloat(loan.annual_interest_rate || 0.12) * parseFloat(loan.tenure_years || 0.5));
+                const totalRepayable = principal + estInterest;
+
+                return `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 border border-2 ${loan.status === 'Active' ? 'border-success-subtle' : (loan.status === 'Pending' ? 'border-warning-subtle' : 'border-secondary-subtle')} shadow-sm">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                        <div>
+                                            <small class="text-muted d-block uppercase fw-semibold" style="font-size: 0.75rem;">Principal Loan</small>
+                                            <span class="fs-4 fw-bold text-dark">Rs. ${principal.toLocaleString()}</span>
+                                        </div>
+                                        <span class="badge bg-${statusClass} py-2 px-3">
+                                            <i class="bi bi-${statusIcon} me-1"></i>${loan.status}
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 small text-dark">
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Interest Rate</span>
+                                            <strong class="text-primary">${ratePct}% p.a.</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Tenure</span>
+                                            <strong>${tenureMos} Months</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Est. Interest</span>
+                                            <strong class="text-success">Rs. ${estInterest.toLocaleString()}</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Total Payable</span>
+                                            <strong>Rs. ${totalRepayable.toLocaleString()}</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Disbursed Date</span>
+                                            <span>${loan.disbursement_date || '—'}</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Interest Paid</span>
+                                            <span>Rs. ${parseFloat(loan.interest_paid || 0).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    ${loan.remarks ? `
+                                        <div class="mt-2 pt-2 border-top small text-muted">
+                                            <i class="bi bi-chat-left-text me-1"></i><strong>Note:</strong> ${loan.remarks}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        `;
+            }).join('')}
+                </div>
+            `;
+        }
+
+        async function populateLoanLedgerTable() {
+            const table = document.getElementById("memberLoansTable");
+            if (!table) return;
+
+            const allLoans = await apiRequest("/loans/");
+            if (allLoans && Array.isArray(allLoans) && allLoans.length > 0) {
+                let loansHtml = "";
+                allLoans.forEach((record, idx) => {
+                    const statusBg = record.status === 'Active' ? 'success' : (record.status === 'Pending' ? 'warning text-dark' : 'secondary');
+                    const principal = parseFloat(record.amount || 0);
+                    const interestPaid = parseFloat(record.interest_paid || 0);
+
+                    loansHtml += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><strong>${record.name}</strong></td>
+                        <td>Rs. ${principal.toLocaleString()}</td>
+                        <td>${record.disbursement_date || '—'}</td>
+                        <td>Rs. ${interestPaid.toLocaleString()}</td>
+                        <td><span class="badge bg-${statusBg}">${record.status}</span></td>
+                    </tr>`;
+                });
+                table.innerHTML = loansHtml;
+            } else {
+                table.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">No loan records found in the ledger.</td></tr>`;
+            }
+        }
+
         let loanModal;
         document.addEventListener("DOMContentLoaded", () => {
             const modalEl = document.getElementById('claimLoanModal');
             if (modalEl) {
                 loanModal = new bootstrap.Modal(modalEl);
             }
+
+            // Inline Loan Form Handler
+            const inlineForm = document.getElementById("inlineLoanForm");
+            if (inlineForm) {
+                inlineForm.addEventListener("submit", async function (e) {
+                    e.preventDefault();
+                    await submitLoanApplication('inline');
+                });
+            }
+
+            // Modal Loan Form Handler
+            const modalForm = document.getElementById("claimLoanForm");
+            if (modalForm) {
+                modalForm.addEventListener("submit", async function (e) {
+                    e.preventDefault();
+                    await submitLoanApplication('modal');
+                });
+            }
         });
 
         function openClaimLoanModal() {
             document.getElementById("claimLoanForm").reset();
             document.getElementById("modalLoanAlert").innerHTML = "";
+            updateLoanPlanDetails('modal');
             if (loanModal) loanModal.show();
         }
 
-        document.getElementById("claimLoanForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
-            const btn = document.getElementById("submitLoanBtn");
-            const alertDiv = document.getElementById("modalLoanAlert");
+        async function submitLoanApplication(prefix) {
+            const btn = document.getElementById(prefix === 'inline' ? 'inlineSubmitLoanBtn' : 'submitLoanBtn');
+            const alertDiv = document.getElementById(prefix === 'inline' ? 'inlineLoanAlert' : 'modalLoanAlert');
+            const planKey = document.getElementById(prefix + "LoanPlan").value;
+            const plan = LOAN_PLANS[planKey] || LOAN_PLANS.short;
+            const amt = parseFloat(document.getElementById(prefix + "LoanAmount").value);
+
+            if (amt > plan.max) {
+                alertDiv.innerHTML = `< div class="alert alert-danger py-2" > <i class="bi bi-exclamation-triangle"></i> Amount cannot exceed Rs.${plan.max.toLocaleString()} for this loan scheme.</div > `;
+                return;
+            }
+
             btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Submitting...`;
+            btn.innerHTML = `< span class="spinner-border spinner-border-sm me-2" ></span > Submitting...`;
 
             const payload = {
-                amount: parseFloat(document.getElementById("modalLoanAmount").value),
-                remarks: document.getElementById("modalLoanRemarks").value,
+                amount: amt,
+                annual_interest_rate: plan.rate,
+                tenure_years: plan.tenure,
+                remarks: document.getElementById(prefix + "LoanRemarks").value,
             };
 
             const data = await apiRequest("/loans/", "POST", payload);
 
             if (data && !data.detail) {
-                alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> Loan request submitted successfully! Pending admin approval.</div>`;
+                alertDiv.innerHTML = `< div class="alert alert-success py-2" > <i class="bi bi-check-circle"></i> Loan application submitted successfully! Pending admin approval.</div > `;
                 setTimeout(() => {
-                    if (loanModal) loanModal.hide();
+                    if (prefix === 'modal' && loanModal) loanModal.hide();
                     location.reload();
                 }, 2000);
             } else {
-                alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x"></i> Failed: ${data.detail || JSON.stringify(data)}</div>`;
+                alertDiv.innerHTML = `< div class="alert alert-danger py-2" > <i class="bi bi-x"></i> Failed: ${data.detail || JSON.stringify(data)}</div > `;
             }
             btn.disabled = false;
-            btn.innerHTML = "Submit Request";
-        });
+            btn.innerHTML = prefix === 'inline' ? '<i class="bi bi-send me-1"></i> Submit Loan Application' : 'Submit Request';
+        }
 
         // QR Modal
         let qrModalInstance;
@@ -825,16 +1166,38 @@
         async function openProfileSettingsModal() {
             document.getElementById("userSettingsForm").reset();
             document.getElementById("settingsAlert").innerHTML = "";
+            document.getElementById("govIdFrontPreview").innerHTML = "";
+            document.getElementById("govIdBackPreview").innerHTML = "";
 
-            // Prefill user email if current user data available
             const token = localStorage.getItem("access");
             try {
-                const res = await fetch("/api/accounts/me/", {
+                const res = await fetch("/api/deposits/dashboard/", {
                     headers: { "Authorization": "Bearer " + token }
                 });
                 if (res.ok) {
-                    const me = await res.json();
-                    if (me.email) document.getElementById("settingsEmail").value = me.email;
+                    const data = await res.json();
+                    if (data && data.member) {
+                        if (data.member.email) document.getElementById("settingsEmail").value = data.member.email;
+
+                        if (data.member.gov_id_front) {
+                            document.getElementById("govIdFrontPreview").innerHTML = `
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="${data.member.gov_id_front}" class="rounded border" style="height: 50px; width: 80px; object-fit: cover;" />
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>
+                                    <a href="${data.member.gov_id_front}" target="_blank" class="btn btn-sm btn-link text-decoration-none">View Full Image</a>
+                                </div>
+                            `;
+                        }
+                        if (data.member.gov_id_back) {
+                            document.getElementById("govIdBackPreview").innerHTML = `
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="${data.member.gov_id_back}" class="rounded border" style="height: 50px; width: 80px; object-fit: cover;" />
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>
+                                    <a href="${data.member.gov_id_back}" target="_blank" class="btn btn-sm btn-link text-decoration-none">View Full Image</a>
+                                </div>
+                            `;
+                        }
+                    }
                 }
             } catch (e) { }
 
@@ -852,23 +1215,36 @@
             const email = document.getElementById("settingsEmail").value.trim();
             const current_password = document.getElementById("settingsCurrentPassword").value;
             const new_password = document.getElementById("settingsNewPassword").value;
+            const frontFile = document.getElementById("settingsGovIdFront").files[0];
+            const backFile = document.getElementById("settingsGovIdBack").files[0];
 
-            const payload = {};
-            if (email) payload.email = email;
+            const formData = new FormData();
+            if (email) formData.append("email", email);
             if (new_password) {
-                payload.current_password = current_password;
-                payload.new_password = new_password;
+                formData.append("current_password", current_password);
+                formData.append("new_password", new_password);
             }
+            if (frontFile) formData.append("gov_id_front", frontFile);
+            if (backFile) formData.append("gov_id_back", backFile);
 
             try {
-                const data = await apiRequest("/accounts/update-profile/", "POST", payload);
-                if (data && data.message) {
+                const token = localStorage.getItem("access");
+                const res = await fetch("/api/accounts/update-profile/", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok && data.message) {
                     alertDiv.innerHTML = `<div class="alert alert-success py-2"><i class="bi bi-check-circle-fill me-1"></i> ${data.message}</div>`;
                     setTimeout(() => {
                         if (settingsModalInstance) settingsModalInstance.hide();
                         location.reload();
                     }, 1800);
-                } else if (data) {
+                } else {
                     alertDiv.innerHTML = `<div class="alert alert-danger py-2"><i class="bi bi-x-circle-fill me-1"></i> ${data.detail || JSON.stringify(data)}</div>`;
                 }
             } catch (err) {

@@ -115,6 +115,26 @@ class MemberSelfUpdateProfileView(APIView):
             user.username = email
             changes.append(f"Email changed from '{old_email}' to '{email}'")
 
+        # Government ID Upload Logic
+        gov_id_front = request.FILES.get("gov_id_front")
+        gov_id_back = request.FILES.get("gov_id_back")
+
+        try:
+            member = Member.objects.get(user=user)
+            member_updated = False
+            if gov_id_front:
+                member.gov_id_front = gov_id_front
+                changes.append("Uploaded Government ID Front image")
+                member_updated = True
+            if gov_id_back:
+                member.gov_id_back = gov_id_back
+                changes.append("Uploaded Government ID Back image")
+                member_updated = True
+            if member_updated:
+                member.save()
+        except Member.DoesNotExist:
+            pass
+
         if not changes:
             return Response(
                 {"detail": "No profile changes were submitted."},

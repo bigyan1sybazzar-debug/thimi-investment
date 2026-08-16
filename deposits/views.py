@@ -10,6 +10,10 @@ from accounts.models import Member, GlobalSetting
 from .models import Deposit
 from .serializers import DepositSerializer
 from .admin_serializers import AdminDepositSerializer
+from notifications_app.email_utils import (
+    send_deposit_claimed_emails,
+    send_deposit_status_email,
+)
 
 
 
@@ -428,10 +432,12 @@ class DepositListCreateView(generics.ListCreateAPIView):
                     }
                 )
 
-        serializer.save(
+        deposit = serializer.save(
             member=member,
             status="pending"
         )
+
+        send_deposit_claimed_emails(deposit)
 
 
 # =====================================================
@@ -482,6 +488,8 @@ class MemberDashboardAPI(APIView):
                 "is_superuser": member.user.is_superuser,
                 "remaining_days": global_setting.remaining_days,
                 "remaining_days_updated_at": global_setting.remaining_days_updated_at,
+                "gov_id_front": request.build_absolute_uri(member.gov_id_front.url) if member.gov_id_front else None,
+                "gov_id_back": request.build_absolute_uri(member.gov_id_back.url) if member.gov_id_back else None,
             },
             "summary": {
                 "total_deposit": total,
@@ -557,7 +565,12 @@ class AdminDepositDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def partial_update(self, request, *args, **kwargs):
         kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
+        response = self.update(request, *args, **kwargs)
+        if response.status_code in (200, 201):
+            deposit = self.get_object()
+            if "status" in request.data:
+                send_deposit_status_email(deposit, deposit.status, remarks=request.data.get("remarks"))
+        return response
 
 
 # =====================================================
@@ -582,6 +595,8 @@ class ApproveDepositView(APIView):
         deposit.approved_by = request.user
         deposit.approved_at = timezone.now()
         deposit.save()
+
+        send_deposit_status_email(deposit, "approved")
 
         return Response(
             {
@@ -613,6 +628,8 @@ class RejectDepositView(APIView):
         deposit.approved_by = request.user
         deposit.approved_at = timezone.now()
         deposit.save()
+
+        send_deposit_status_email(deposit, "rejected")
 
         return Response(
             {

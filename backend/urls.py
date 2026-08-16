@@ -25,11 +25,7 @@ urlpatterns = [
     path('', include('webui.urls')),
     path(
     "api/members/",include("members.urls"),),
-    path(
-        '',
-        TemplateView.as_view(template_name='login.html'),
-        name='login'
-    ),
+
 
     path(
         'admin-dashboard/',

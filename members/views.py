@@ -100,6 +100,11 @@ class MemberAdminUpdateView(APIView):
         if is_active is not None:
             member.is_active_member = str(is_active).lower() in ("true", "1", "yes")
 
+        if request.FILES.get("gov_id_front"):
+            member.gov_id_front = request.FILES.get("gov_id_front")
+        if request.FILES.get("gov_id_back"):
+            member.gov_id_back = request.FILES.get("gov_id_back")
+
         member.save()
 
         return Response({
@@ -112,4 +117,6 @@ class MemberAdminUpdateView(APIView):
             "phone": member.phone,
             "address": member.address,
             "is_active_member": member.is_active_member,
+            "gov_id_front": request.build_absolute_uri(member.gov_id_front.url) if member.gov_id_front else None,
+            "gov_id_back": request.build_absolute_uri(member.gov_id_back.url) if member.gov_id_back else None,
         })
