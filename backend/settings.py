@@ -138,8 +138,13 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Grou
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
 
 # Google OAuth Credentials
-GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
-GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+try:
+    from decouple import config
+    GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default=os.environ.get('GOOGLE_CLIENT_ID', ''))
+    GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default=os.environ.get('GOOGLE_CLIENT_SECRET', ''))
+except ImportError:
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
 
 
