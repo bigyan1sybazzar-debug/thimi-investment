@@ -148,6 +148,7 @@ except ImportError:
 
 import sys
 print("DIAGNOSTIC — GOOGLE_CLIENT_ID is set in env:", bool(GOOGLE_CLIENT_ID), file=sys.stderr)
+print("DIAGNOSTIC — All env var names:", [k for k in os.environ.keys() if k.startswith(('GOOGLE', 'RAILWAY', 'DATABASE', 'SECRET', 'DEBUG'))], file=sys.stderr)
 
 
 
