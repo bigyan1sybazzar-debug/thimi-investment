@@ -338,6 +338,37 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Group Expenses (Added by Admin) -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-receipt me-1 text-danger"></i> Group Expenses</h6>
+                            <small class="text-muted">Official group expenses recorded by administration</small>
+                        </div>
+                        <span class="badge bg-danger fs-6 py-2 px-3" id="memberTotalExpenseBadge">Total: Rs. 0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="memberExpensesTable">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-3">Loading group expenses...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- Stocks -->
@@ -1022,6 +1053,7 @@
         }
 
         async function populateLoanLedgerTable() {
+            populateExpensesTable();
             const table = document.getElementById("memberLoansTable");
             if (!table) return;
 
@@ -1046,6 +1078,44 @@
                 table.innerHTML = loansHtml;
             } else {
                 table.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">No loan records found in the ledger.</td></tr>`;
+            }
+        }
+
+        async function populateExpensesTable() {
+            const table = document.getElementById("memberExpensesTable");
+            const badge = document.getElementById("memberTotalExpenseBadge");
+            if (!table) return;
+
+            const expenses = await apiRequest("/deposits/expenses/");
+            if (expenses && Array.isArray(expenses) && expenses.length > 0) {
+                let total = 0;
+                let html = "";
+                expenses.forEach((item, idx) => {
+                    const amt = parseFloat(item.amount || 0);
+                    total += amt;
+                    const rUrl = item.receipt_url || item.receipt;
+                    const receiptLink = rUrl ?
+                        `<a href="${rUrl}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-paperclip me-1"></i>View</a>` :
+                        '<span class="text-muted small">—</span>';
+
+                    const catBadge = (item.category || 'other').toUpperCase();
+
+                    html += `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><strong>${item.title}</strong></td>
+                        <td><span class="badge bg-secondary">${catBadge}</span></td>
+                        <td class="text-danger fw-bold">Rs. ${amt.toLocaleString()}</td>
+                        <td>${item.date || '—'}</td>
+                        <td><small class="text-muted">${item.description || '—'}</small></td>
+                        <td>${receiptLink}</td>
+                    </tr>`;
+                });
+                table.innerHTML = html;
+                if (badge) badge.innerText = "Total: Rs. " + total.toLocaleString();
+            } else {
+                table.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">No group expenses recorded yet.</td></tr>`;
+                if (badge) badge.innerText = "Total: Rs. 0";
             }
         }
 

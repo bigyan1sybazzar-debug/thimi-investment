@@ -99,3 +99,40 @@ class Deposit(models.Model):
 
     def __str__(self):
         return f"{self.member.member_id} - {self.saving_month}/{self.saving_year}"
+
+
+class Expense(models.Model):
+    """Group expenses tracked by admin, visible to all members."""
+
+    CATEGORY_CHOICES = [
+        ("operational", "Operational"),
+        ("meeting", "Meeting / Event"),
+        ("stationery", "Stationery / Supplies"),
+        ("travel", "Travel / Transport"),
+        ("fee", "Bank / Service Fee"),
+        ("fine", "Penalty / Fine"),
+        ("other", "Other"),
+    ]
+
+    title = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    category = models.CharField(
+        max_length=30, choices=CATEGORY_CHOICES, default="other"
+    )
+    date = models.DateField(default=timezone.now)
+    description = models.TextField(blank=True, null=True)
+    receipt = models.ImageField(
+        upload_to="expenses/", blank=True, null=True
+    )
+    added_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="added_expenses"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.title} — Rs.{self.amount} ({self.date})"

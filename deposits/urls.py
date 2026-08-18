@@ -9,6 +9,8 @@ from .views import (
     RejectDepositView,
     AdminDashboardAPI,
     GlobalSettingAPI,
+    ExpenseListCreateView,
+    ExpenseDetailView,
 )
 
 urlpatterns = [
@@ -17,6 +19,18 @@ urlpatterns = [
         "settings/",
         GlobalSettingAPI.as_view(),
         name="global-settings",
+    ),
+
+    # Expenses APIs
+    path(
+        "expenses/",
+        ExpenseListCreateView.as_view(),
+        name="expense-list-create",
+    ),
+    path(
+        "expenses/<int:pk>/",
+        ExpenseDetailView.as_view(),
+        name="expense-detail",
     ),
 
     # ============================

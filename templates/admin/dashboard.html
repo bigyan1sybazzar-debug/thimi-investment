@@ -158,12 +158,44 @@
                             data-bs-target="#adminInventoryTab" type="button">🗂 Share Inventory</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold" id="adminHydro-tab" data-bs-toggle="tab"
-                            data-bs-target="#adminHydroTab" type="button">💧 Hydropower Plan</button>
+                        <button class="nav-link fw-bold text-danger" id="adminExpenses-tab" data-bs-toggle="tab"
+                            data-bs-target="#adminExpensesTab" type="button">🧾 Expenses</button>
                     </li>
                 </ul>
             </div>
             <div class="card-body tab-content p-3">
+
+                <!-- Expenses Tab -->
+                <div class="tab-pane fade" id="adminExpensesTab" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-receipt text-danger me-1"></i> Admin Expense Management
+                        </h6>
+                        <button class="btn btn-sm btn-danger" onclick="openExpenseModal()">
+                            <i class="bi bi-plus-circle me-1"></i> Add Expense
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Amount (Rs.)</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Receipt</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminExpensesTable">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Loading expenses…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
                 <!-- Loans Tab -->
                 <div class="tab-pane fade show active" id="adminLoansTab" role="tabpanel">
@@ -259,7 +291,76 @@
 
     </div>
 
-    {% include 'includes/footer.html' %}
+</div>
+
+<!-- Admin Add/Edit Expense Modal -->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="expenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="expenseForm">
+                <input type="hidden" id="expenseId" value="">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="expenseModalLabel">🧾 Add New Expense</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="expenseModalAlert"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Expense Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="expTitle" required
+                            placeholder="e.g. Office Rent / Meeting Refreshments">
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Amount (Rs.) <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="expAmount" required min="1" step="0.01"
+                                placeholder="1500">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" id="expCategory" required>
+                                <option value="operational">Operational</option>
+                                <option value="meeting">Meeting / Event</option>
+                                <option value="stationery">Stationery / Supplies</option>
+                                <option value="travel">Travel / Transport</option>
+                                <option value="fee">Bank / Service Fee</option>
+                                <option value="fine">Penalty / Fine</option>
+                                <option value="other" selected>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Expense Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="expDate" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description / Remarks</label>
+                        <textarea class="form-control" id="expDescription" rows="2"
+                            placeholder="Details about this expense…"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Receipt Image / Bill Proof</label>
+                        <input type="file" class="form-control" id="expReceipt" accept="image/*">
+                        <div class="form-text">Optional bill, invoice, or receipt screenshot</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm" id="saveExpenseBtn">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% include 'includes/footer.html' %}
 </div>
 
 {% endblock %}
@@ -267,7 +368,12 @@
 {% block extra_js %}
 <script src="{% static 'js/api.js' %}"></script>
 <script>
+    let expModalBs;
+
     window.onload = async function () {
+        expModalBs = new bootstrap.Modal(document.getElementById('expenseModal'));
+        document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+
         const data = await apiRequest("/deposits/admin/dashboard/");
         if (!data) return;
 
@@ -343,6 +449,143 @@
         </tr>`;
         });
         document.getElementById("adminHydroTable").innerHTML = hydroHtml;
+
+        // Admin Expenses Table
+        loadAdminExpenses();
     };
+
+    let cachedExpenses = [];
+
+    async function loadAdminExpenses() {
+        const table = document.getElementById("adminExpensesTable");
+        if (!table) return;
+
+        const data = await apiRequest("/deposits/expenses/");
+        if (data && Array.isArray(data)) {
+            cachedExpenses = data;
+            if (data.length === 0) {
+                table.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No expenses recorded yet. Click "+ Add Expense" to create one.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach((exp, idx) => {
+                const amt = parseFloat(exp.amount || 0);
+                const rUrl = exp.receipt_url || exp.receipt;
+                const receiptLink = rUrl ?
+                    `<a href="${rUrl}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-paperclip me-1"></i>View</a>` :
+                    '<span class="text-muted small">—</span>';
+
+                html += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><strong>${exp.title}</strong></td>
+                    <td><span class="badge bg-secondary">${(exp.category || 'other').toUpperCase()}</span></td>
+                    <td class="text-danger fw-bold">Rs. ${amt.toLocaleString()}</td>
+                    <td>${exp.date || '—'}</td>
+                    <td><small class="text-muted">${exp.description || '—'}</small></td>
+                    <td>${receiptLink}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-warning py-0 px-2 me-1" onclick="editExpense(${exp.id})"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteExpense(${exp.id})"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            table.innerHTML = html;
+        } else {
+            table.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Failed to load expenses.</td></tr>`;
+        }
+    }
+
+    function openExpenseModal(expId = null) {
+        document.getElementById("expenseForm").reset();
+        document.getElementById("expenseId").value = "";
+        document.getElementById("expenseModalAlert").innerHTML = "";
+        document.getElementById("expDate").value = new Date().toISOString().split('T')[0];
+
+        if (expId) {
+            document.getElementById("expenseModalLabel").innerText = "✏️ Edit Expense";
+            const exp = cachedExpenses.find(e => e.id === expId);
+            if (exp) {
+                document.getElementById("expenseId").value = exp.id;
+                document.getElementById("expTitle").value = exp.title;
+                document.getElementById("expAmount").value = exp.amount;
+                document.getElementById("expCategory").value = exp.category || 'other';
+                document.getElementById("expDate").value = exp.date || '';
+                document.getElementById("expDescription").value = exp.description || '';
+            }
+        } else {
+            document.getElementById("expenseModalLabel").innerText = "🧾 Add New Expense";
+        }
+        expModalBs.show();
+    }
+
+    function editExpense(expId) {
+        openExpenseModal(expId);
+    }
+
+    async function deleteExpense(expId) {
+        if (!confirm("Are you sure you want to delete this expense entry?")) return;
+
+        const token = localStorage.getItem("access");
+        try {
+            const resp = await fetch(`/api/deposits/expenses/${expId}/`, {
+                method: "DELETE",
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (resp.ok || resp.status === 24) {
+                loadAdminExpenses();
+            } else {
+                alert("Could not delete expense.");
+            }
+        } catch (err) {
+            alert("Connection error.");
+        }
+    }
+
+    document.getElementById("expenseForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const token = localStorage.getItem("access");
+        const expId = document.getElementById("expenseId").value;
+        const alertEl = document.getElementById("expenseModalAlert");
+        const saveBtn = document.getElementById("saveExpenseBtn");
+
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Saving…";
+
+        const formData = new FormData();
+        formData.append("title", document.getElementById("expTitle").value);
+        formData.append("amount", document.getElementById("expAmount").value);
+        formData.append("category", document.getElementById("expCategory").value);
+        formData.append("date", document.getElementById("expDate").value);
+        formData.append("description", document.getElementById("expDescription").value);
+
+        const receiptFile = document.getElementById("expReceipt").files[0];
+        if (receiptFile) formData.append("receipt", receiptFile);
+
+        const url = expId ? `/api/deposits/expenses/${expId}/` : `/api/deposits/expenses/`;
+        const method = expId ? "PATCH" : "POST";
+
+        try {
+            const resp = await fetch(url, {
+                method: method,
+                headers: { "Authorization": "Bearer " + token },
+                body: formData
+            });
+
+            if (resp.ok) {
+                expModalBs.hide();
+                loadAdminExpenses();
+            } else {
+                const errData = await resp.json();
+                alertEl.innerHTML = `<div class="alert alert-danger py-2 small">${JSON.stringify(errData)}</div>`;
+            }
+        } catch (err) {
+            alertEl.innerHTML = `<div class="alert alert-danger py-2 small">Network error. Please try again.</div>`;
+        }
+
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Save Expense";
+    });
 </script>
 {% endblock %}

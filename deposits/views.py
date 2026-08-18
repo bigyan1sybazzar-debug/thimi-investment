@@ -7,9 +7,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import Member, GlobalSetting
-from .models import Deposit
+from .models import Deposit, Expense
 from .serializers import DepositSerializer
 from .admin_serializers import AdminDepositSerializer
+from .expense_serializers import ExpenseSerializer
 from notifications_app.email_utils import (
     send_deposit_claimed_emails,
     send_deposit_status_email,
@@ -735,3 +736,48 @@ class GlobalSettingAPI(APIView):
             "qr_code_url": qr_url,
             "message": "Settings updated successfully."
         })
+
+
+# =====================================================
+# EXPENSES - List/Create (Admin creates, all members read)
+# =====================================================
+class ExpenseListCreateView(generics.ListCreateAPIView):
+    """GET = all authenticated. POST = admin only."""
+    queryset = Expense.objects.all()
+    serializer_class = ExpenseSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(added_by=self.request.user)
+
+
+# =====================================================
+# EXPENSES - Detail / Edit / Delete (Admin only)
+# =====================================================
+class ExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET = all authenticated. PUT/PATCH/DELETE = admin only."""
+    queryset = Expense.objects.all()
+    serializer_class = ExpenseSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
