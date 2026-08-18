@@ -43,6 +43,12 @@
     Reports
   </a>
 
+  <a href="{% url 'admin_expenses' %}"
+    class="{% if request.resolver_match.url_name == 'admin_expenses' %}active{% endif %}">
+    <i class="bi bi-receipt text-danger"></i>
+    Expenses
+  </a>
+
   <a href="{% url 'admin_notifications' %}"
     class="{% if request.resolver_match.url_name == 'admin_notifications' %}active{% endif %}">
     <i class="bi bi-bell"></i>

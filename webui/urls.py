@@ -38,4 +38,5 @@ urlpatterns = [
     path("reports/", views.reports_view, name="admin_reports"),
     path("notifications/", views.notifications_view, name="admin_notifications"),
     path("settings/", views.settings_view, name="admin_settings"),
+    path("expenses/", views.expenses_view, name="admin_expenses"),
 ]

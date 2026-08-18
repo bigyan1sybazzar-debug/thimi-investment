@@ -23,16 +23,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('', include('webui.urls')),
-    path(
-    "api/members/",include("members.urls"),),
-
-
-    path(
-        'admin-dashboard/',
-        TemplateView.as_view(template_name='admin/dashboard.html'),
-        name='admin-dashboard'
-    ),
-
+    path("api/members/", include("members.urls")),
 ]
 urlpatterns += static(
     settings.MEDIA_URL,

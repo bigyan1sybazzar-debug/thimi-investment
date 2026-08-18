@@ -79,3 +79,7 @@ def notifications_view(request):
 
 def settings_view(request):
     return render(request, "admin/settings.html")
+
+
+def expenses_view(request):
+    return render(request, "admin/expenses.html")

@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Group Expenses — Thimi Investment{% endblock %}
+
+{% block content %}
+{% include 'includes/sidebar.html' %}
+
+<div class="main-content">
+    {% include 'includes/navbar.html' %}
+
+    <div class="container-fluid mt-4 pb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="mb-0 fw-bold text-dark"><i class="bi bi-receipt text-danger me-2"></i>Group Expenses</h2>
+                <p class="text-muted mb-0 small">Manage and record official group expenses visible to all members.</p>
+            </div>
+            <button class="btn btn-danger btn-sm px-3" onclick="openExpenseModal()">
+                <i class="bi bi-plus-circle me-1"></i> Add New Expense
+            </button>
+        </div>
+
+        <!-- Expense Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 border-start border-danger border-4">
+                    <div class="card-body py-3">
+                        <span class="text-muted small d-block">Total Group Expenses</span>
+                        <h3 class="text-danger fw-bold mb-0 mt-1" id="expTotalSum">Rs. 0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 border-start border-primary border-4">
+                    <div class="card-body py-3">
+                        <span class="text-muted small d-block">Total Entries Recorded</span>
+                        <h3 class="text-primary fw-bold mb-0 mt-1" id="expTotalCount">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 border-start border-success border-4">
+                    <div class="card-body py-3">
+                        <span class="text-muted small d-block">Latest Expense Date</span>
+                        <h4 class="text-success fw-bold mb-0 mt-1" id="expLatestDate">—</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="expensesAlert"></div>
+
+        <!-- Main Expenses Table -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">All Recorded Group Expenses</h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadExpenses()"><i
+                        class="bi bi-arrow-clockwise"></i> Refresh</button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Expense Title</th>
+                                <th>Category</th>
+                                <th>Amount (Rs.)</th>
+                                <th>Date</th>
+                                <th>Description / Remarks</th>
+                                <th>Receipt / Bill</th>
+                                <th>Added By</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminExpensesTablePage">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">Loading group expenses…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'includes/footer.html' %}
+</div>
+
+<!-- Add/Edit Expense Modal -->
+<div class="modal fade" id="expenseModalPage" tabindex="-1" aria-labelledby="expenseModalPageLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="expenseFormPage">
+                <input type="hidden" id="expenseIdPage" value="">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="expenseModalPageLabel">🧾 Add New Expense</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="expenseModalAlertPage"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Expense Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="expTitlePage" required
+                            placeholder="e.g. Office Rent / Stationaries / Meeting Snacks">
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Amount (Rs.) <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="expAmountPage" required min="1" step="0.01"
+                                placeholder="1500">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" id="expCategoryPage" required>
+                                <option value="operational">Operational</option>
+                                <option value="meeting">Meeting / Event</option>
+                                <option value="stationery">Stationery / Supplies</option>
+                                <option value="travel">Travel / Transport</option>
+                                <option value="fee">Bank / Service Fee</option>
+                                <option value="fine">Penalty / Fine</option>
+                                <option value="other" selected>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Expense Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="expDatePage" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description / Remarks</label>
+                        <textarea class="form-control" id="expDescriptionPage" rows="2"
+                            placeholder="Details about this expense…"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Receipt Image / Bill Proof</label>
+                        <input type="file" class="form-control" id="expReceiptPage" accept="image/*">
+                        <div class="form-text">Optional bill, invoice, or receipt screenshot</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm" id="saveExpenseBtnPage">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+    let expModalBsPage;
+    let cachedExpensesPage = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        expModalBsPage = new bootstrap.Modal(document.getElementById('expenseModalPage'));
+        document.getElementById('expDatePage').value = new Date().toISOString().split('T')[0];
+        loadExpenses();
+    });
+
+    async function loadExpenses() {
+        const tbody = document.getElementById("adminExpensesTablePage");
+        const totalSumEl = document.getElementById("expTotalSum");
+        const totalCountEl = document.getElementById("expTotalCount");
+        const latestDateEl = document.getElementById("expLatestDate");
+
+        const data = await apiRequest("/deposits/expenses/");
+        if (!data || !Array.isArray(data)) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">Failed to load expenses. Please verify admin login.</td></tr>`;
+            return;
+        }
+
+        cachedExpensesPage = data;
+        totalCountEl.innerText = data.length;
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No expenses recorded yet. Click "+ Add New Expense" to create one.</td></tr>`;
+            totalSumEl.innerText = "Rs. 0";
+            latestDateEl.innerText = "—";
+            return;
+        }
+
+        let sum = 0;
+        let html = "";
+        data.forEach((exp, idx) => {
+            const amt = parseFloat(exp.amount || 0);
+            sum += amt;
+            const rUrl = exp.receipt_url || exp.receipt;
+            const receiptBtn = rUrl ?
+                `<a href="${rUrl}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-paperclip me-1"></i>View Bill</a>` :
+                '<span class="text-muted small">—</span>';
+
+            html += `
+            <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${exp.title}</strong></td>
+                <td><span class="badge bg-secondary">${(exp.category || 'other').toUpperCase()}</span></td>
+                <td class="text-danger fw-bold">Rs. ${amt.toLocaleString()}</td>
+                <td>${exp.date || '—'}</td>
+                <td class="small text-muted" style="max-width:200px;white-space:normal;">${exp.description || '—'}</td>
+                <td>${receiptBtn}</td>
+                <td><small class="text-muted">${exp.added_by_name || 'Admin'}</small></td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-warning py-0 px-2 me-1" onclick="editExpensePage(${exp.id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteExpensePage(${exp.id})"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
+        totalSumEl.innerText = "Rs. " + sum.toLocaleString();
+        latestDateEl.innerText = data[0].date || "—";
+    }
+
+    function openExpenseModal(expId = null) {
+        document.getElementById("expenseFormPage").reset();
+        document.getElementById("expenseIdPage").value = "";
+        document.getElementById("expenseModalAlertPage").innerHTML = "";
+        document.getElementById("expDatePage").value = new Date().toISOString().split('T')[0];
+
+        if (expId) {
+            document.getElementById("expenseModalPageLabel").innerText = "✏️ Edit Expense";
+            const exp = cachedExpensesPage.find(e => e.id === expId);
+            if (exp) {
+                document.getElementById("expenseIdPage").value = exp.id;
+                document.getElementById("expTitlePage").value = exp.title;
+                document.getElementById("expAmountPage").value = exp.amount;
+                document.getElementById("expCategoryPage").value = exp.category || 'other';
+                document.getElementById("expDatePage").value = exp.date || '';
+                document.getElementById("expDescriptionPage").value = exp.description || '';
+            }
+        } else {
+            document.getElementById("expenseModalPageLabel").innerText = "🧾 Add New Expense";
+        }
+        expModalBsPage.show();
+    }
+
+    function editExpensePage(expId) {
+        openExpenseModal(expId);
+    }
+
+    async function deleteExpensePage(expId) {
+        if (!confirm("Are you sure you want to permanently DELETE this expense?")) return;
+        const token = localStorage.getItem("access");
+
+        try {
+            const resp = await fetch(`/api/deposits/expenses/${expId}/`, {
+                method: "DELETE",
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (resp.ok || resp.status === 204) {
+                loadExpenses();
+            } else {
+                alert("Could not delete expense.");
+            }
+        } catch (err) {
+            alert("Connection error.");
+        }
+    }
+
+    document.getElementById("expenseFormPage").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const token = localStorage.getItem("access");
+        const expId = document.getElementById("expenseIdPage").value;
+        const alertEl = document.getElementById("expenseModalAlertPage");
+        const saveBtn = document.getElementById("saveExpenseBtnPage");
+
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Saving…";
+
+        const formData = new FormData();
+        formData.append("title", document.getElementById("expTitlePage").value);
+        formData.append("amount", document.getElementById("expAmountPage").value);
+        formData.append("category", document.getElementById("expCategoryPage").value);
+        formData.append("date", document.getElementById("expDatePage").value);
+        formData.append("description", document.getElementById("expDescriptionPage").value);
+
+        const receiptFile = document.getElementById("expReceiptPage").files[0];
+        if (receiptFile) formData.append("receipt", receiptFile);
+
+        const url = expId ? `/api/deposits/expenses/${expId}/` : `/api/deposits/expenses/`;
+        const method = expId ? "PATCH" : "POST";
+
+        try {
+            const resp = await fetch(url, {
+                method: method,
+                headers: { "Authorization": "Bearer " + token },
+                body: formData
+            });
+
+            if (resp.ok) {
+                expModalBsPage.hide();
+                loadExpenses();
+            } else {
+                const errData = await resp.json();
+                alertEl.innerHTML = `<div class="alert alert-danger py-2 small">${JSON.stringify(errData)}</div>`;
+            }
+        } catch (err) {
+            alertEl.innerHTML = `<div class="alert alert-danger py-2 small">Network error. Please try again.</div>`;
+        }
+
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Save Expense";
+    });
+</script>
+{% endblock %}
