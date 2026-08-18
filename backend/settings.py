@@ -146,6 +146,9 @@ except ImportError:
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
+import sys
+print("DIAGNOSTIC — GOOGLE_CLIENT_ID is set in env:", bool(GOOGLE_CLIENT_ID), file=sys.stderr)
+
 
 
 
