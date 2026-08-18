@@ -96,3 +96,41 @@ document
       alert("Server connection failed");
     }
   });
+
+// Google Sign-In click handler
+const googleBtn = document.getElementById("googleSignInBtn");
+if (googleBtn) {
+  googleBtn.addEventListener("click", function () {
+    const clientId = window.GOOGLE_CLIENT_ID;
+    
+    if (clientId && clientId.trim() !== "") {
+      // Redirect to real Google OAuth 2.0 Consent Screen
+      const redirectUri = encodeURIComponent(`${window.location.origin}/google-callback/`);
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&prompt=consent`;
+      window.location.href = googleAuthUrl;
+    } else {
+      // If client ID is not configured, fallback to Mock Google login callback
+      const errMsgDiv = document.getElementById("errorMessage");
+      if (errMsgDiv) {
+        errMsgDiv.className = "text-info mt-3 text-center small fw-semibold";
+        errMsgDiv.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i> Launching Mock Google login (credentials not set)...';
+      }
+      
+      // Simulate redirection delay for premium look and feel
+      setTimeout(function () {
+        window.location.href = `/google-callback/?mock=true`;
+      }, 1000);
+    }
+  });
+}
+
+// Display errors passed in query parameters (e.g. from OAuth redirects)
+const urlParams = new URLSearchParams(window.location.search);
+const errorMsg = urlParams.get("error");
+if (errorMsg) {
+  const errMsgDiv = document.getElementById("errorMessage");
+  if (errMsgDiv) {
+    errMsgDiv.className = "text-danger mt-3 text-center small fw-semibold";
+    errMsgDiv.innerText = errorMsg;
+  }
+}

@@ -8,6 +8,7 @@ urlpatterns = [
     # ==========================
     path("", views.login_view, name="login"),
     path("login/", views.login_view, name="login_alias"),
+    path("google-callback/", views.google_callback_view, name="google_callback"),
 
 
     # ==========================

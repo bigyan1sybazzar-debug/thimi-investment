@@ -137,6 +137,11 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'bojs' + 'mqxj' + 'b
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <bigyan.neupane6@gmail.com>')
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
 
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
+
 
 
 
