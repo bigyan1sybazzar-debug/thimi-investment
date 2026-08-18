@@ -19,92 +19,71 @@ def login_view(request):
     return render(request, "login.html", {'google_client_id': google_client_id})
 
 def google_callback_view(request):
-    # Check if this is a mock request
-    is_mock = request.GET.get('mock') == 'true'
     error = request.GET.get('error')
 
     if error:
         return HttpResponseRedirect(f"{reverse('login')}?error={error}")
 
-    email = None
-    first_name = ""
-    last_name = ""
+    code = request.GET.get('code')
+    if not code:
+        return HttpResponseRedirect(f"{reverse('login')}?error=No OAuth code returned from Google.")
 
-    if is_mock:
-        # Check if settings allow mock/demo login. Under DEBUG=True we should definitely allow it.
-        if settings.DEBUG:
-            email = "google_demo_member@example.com"
-            first_name = "Google Demo"
-            last_name = "Member"
-        else:
-            return HttpResponseRedirect(f"{reverse('login')}?error=Mock login is only allowed in DEBUG mode.")
-    else:
-        code = request.GET.get('code')
-        if not code:
-            return HttpResponseRedirect(f"{reverse('login')}?error=No OAuth code returned from Google.")
+    client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
+    client_secret = getattr(settings, 'GOOGLE_CLIENT_SECRET', '')
 
-        client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
-        client_secret = getattr(settings, 'GOOGLE_CLIENT_SECRET', '')
+    if not client_id or not client_secret:
+        return HttpResponseRedirect(f"{reverse('login')}?error=Google OAuth credentials are not configured on the server.")
 
-        if not client_id or not client_secret:
-            return HttpResponseRedirect(f"{reverse('login')}?error=Google OAuth credentials are not configured on the server.")
+    # Exchange authorization code for access/ID token
+    token_url = "https://oauth2.googleapis.com/token"
+    redirect_uri = request.build_absolute_uri(reverse('google_callback'))
+    
+    # Strip query parameters if redirect_uri had any
+    if '?' in redirect_uri:
+        redirect_uri = redirect_uri.split('?')[0]
 
-        # Exchange authorization code for access/ID token
-        token_url = "https://oauth2.googleapis.com/token"
-        redirect_uri = request.build_absolute_uri(reverse('google_callback'))
+    post_data = {
+        'code': code,
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'redirect_uri': redirect_uri,
+        'grant_type': 'authorization_code'
+    }
+
+    try:
+        req_data = urllib.parse.urlencode(post_data).encode('utf-8')
+        token_req = urllib.request.Request(token_url, data=req_data, method='POST')
         
-        # Strip query parameters if redirect_uri had any
-        if '?' in redirect_uri:
-            redirect_uri = redirect_uri.split('?')[0]
-
-        post_data = {
-            'code': code,
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'redirect_uri': redirect_uri,
-            'grant_type': 'authorization_code'
-        }
-
         try:
-            req_data = urllib.parse.urlencode(post_data).encode('utf-8')
-            token_req = urllib.request.Request(token_url, data=req_data, method='POST')
-            
-            try:
-                with urllib.request.urlopen(token_req, timeout=10) as resp:
-                    token_json = json.loads(resp.read().decode('utf-8'))
-            except urllib.error.HTTPError as e:
-                err_json = json.loads(e.read().decode('utf-8'))
-                error_msg = err_json.get('error_description', 'Token exchange failed.')
-                return HttpResponseRedirect(f"{reverse('login')}?error={error_msg}")
+            with urllib.request.urlopen(token_req, timeout=10) as resp:
+                token_json = json.loads(resp.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            err_json = json.loads(e.read().decode('utf-8'))
+            error_msg = err_json.get('error_description', 'Token exchange failed.')
+            return HttpResponseRedirect(f"{reverse('login')}?error={error_msg}")
 
-            # Verify the ID Token with Google tokeninfo endpoint
-            id_token = token_json.get('id_token')
-            if not id_token:
-                return HttpResponseRedirect(f"{reverse('login')}?error=No ID Token returned from Google.")
+        # Verify the ID Token with Google tokeninfo endpoint
+        id_token = token_json.get('id_token')
+        if not id_token:
+            return HttpResponseRedirect(f"{reverse('login')}?error=No ID Token returned from Google.")
 
-            info_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
-            info_req = urllib.request.Request(info_url, method='GET')
-            
-            try:
-                with urllib.request.urlopen(info_req, timeout=10) as resp:
-                    info_json = json.loads(resp.read().decode('utf-8'))
-            except urllib.error.HTTPError as e:
-                err_json = json.loads(e.read().decode('utf-8'))
-                error_msg = err_json.get('error_description', 'Failed to verify token identity.')
-                return HttpResponseRedirect(f"{reverse('login')}?error={error_msg}")
+        info_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+        info_req = urllib.request.Request(info_url, method='GET')
+        
+        try:
+            with urllib.request.urlopen(info_req, timeout=10) as resp:
+                info_json = json.loads(resp.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            err_json = json.loads(e.read().decode('utf-8'))
+            error_msg = err_json.get('error_description', 'Failed to verify token identity.')
+            return HttpResponseRedirect(f"{reverse('login')}?error={error_msg}")
 
-            email = info_json.get('email')
-            if not email:
-                return HttpResponseRedirect(f"{reverse('login')}?error=Email address not provided by Google.")
+        email = info_json.get('email')
+        if not email:
+            return HttpResponseRedirect(f"{reverse('login')}?error=Email address not provided by Google.")
 
-            first_name = info_json.get('given_name', '')
-            last_name = info_json.get('family_name', '')
-
-        except Exception as e:
-            return HttpResponseRedirect(f"{reverse('login')}?error=Failed to connect to Google validation service: {str(e)}")
-
-    if not email:
-        return HttpResponseRedirect(f"{reverse('login')}?error=Authentication failed.")
+    except Exception as e:
+        return HttpResponseRedirect(f"{reverse('login')}?error=Failed to connect to Google validation service: {str(e)}")
 
     # Find or check User
     try:
@@ -114,17 +93,7 @@ def google_callback_view(request):
             user = User.objects.filter(username__iexact=email).first()
             
         if not user:
-            if is_mock:
-                # Auto-create only the mock user during testing
-                user = User.objects.create_user(
-                    username="google_demo_member",
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name
-                )
-                Member.objects.get_or_create(user=user, defaults={'member_id': f"M{user.id:04d}"})
-            else:
-                return HttpResponseRedirect(f"{reverse('login')}?error=This Google account is not registered. Access denied.")
+            return HttpResponseRedirect(f"{reverse('login')}?error=This Google account is not registered. Access denied.")
         
         # Generate SimpleJWT tokens
         refresh = RefreshToken.for_user(user)
