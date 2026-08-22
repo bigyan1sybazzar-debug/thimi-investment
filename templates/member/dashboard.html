@@ -707,20 +707,19 @@
                         let fineSubtext = "";
                         let fineColorClass = "text-success";
 
-                        if (daysOverdue <= 5) {
+                        if (daysOverdue === 0) {
                             fine = 0;
                             fineDisplay = "Rs. 0";
-                            const graceLeft = 5 - daysOverdue;
-                            fineSubtext = `Within 5-day grace period (${graceLeft} day${graceLeft !== 1 ? 's' : ''} remaining for fine)`;
+                            fineSubtext = "Payment deadline today — No fine yet";
                             fineColorClass = "text-success";
                             bgGradient = "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)";
                             iconHtml = '<i class="bi bi-clock-history text-info-emphasis"></i>';
                             borderStyle = "border: 1px solid #4dd0e1;";
                             textClass = "text-dark";
-                        } else if (daysOverdue > 5 && daysOverdue <= 10) {
+                        } else if (daysOverdue <= 10) {
                             fine = 200;
                             fineDisplay = "Rs. 200";
-                            fineSubtext = `Day ${daysOverdue} after deadline (Days 6-10 fine period)`;
+                            fineSubtext = `Day ${daysOverdue} overdue — Flat fine Rs. 200 (Days 1–10)`;
                             fineColorClass = "text-danger";
                             bgGradient = "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)";
                             iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
@@ -730,7 +729,7 @@
                             const dailyFineDays = daysOverdue - 10;
                             fine = 200 + (100 * dailyFineDays);
                             fineDisplay = `Rs. ${fine}`;
-                            fineSubtext = `Rs. 200 base + Rs. 100/day for ${dailyFineDays} day${dailyFineDays > 1 ? 's' : ''} past 10 days overdue`;
+                            fineSubtext = `Rs. 200 + Rs. 100/day × ${dailyFineDays} day${dailyFineDays > 1 ? 's' : ''} past 10 days`;
                             fineColorClass = "text-danger";
                             bgGradient = "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)";
                             iconHtml = '<i class="bi bi-exclamation-octagon-fill text-danger"></i>';
@@ -774,7 +773,7 @@
                                             
                                             <div class="mt-3 p-2 bg-white bg-opacity-50 rounded small">
                                                 <span class="fw-bold">📌 Rules Info:</span>
-                                                First 5 days: <strong>Rs. 0 fine</strong> | Days 6-10: <strong>Rs. 200 fine</strong> | After 10 days: <strong>Rs. 100 fine per daily</strong>.
+                                                Days 1–10: <strong>Rs. 200 flat fine</strong> | After 10 days: <strong>Rs. 100 fine per day additional</strong>.
                                             </div>
                                         </div>
                                     </div>

@@ -67,9 +67,8 @@ class Command(BaseCommand):
 
                     <div style="background: #f8fafc; padding: 14px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #475569;">
                         <strong>📌 Fine Rules:</strong><br/>
-                        • First 5 days: Rs. 0 fine<br/>
-                        • Days 6 to 10: Rs. 200 fine<br/>
-                        • After 10 days: Rs. 100 fine
+                        • Days 1 to 10: Rs. 200 flat fine<br/>
+                        • After 10 days: Rs. 200 + Rs. 100/day additional
                     </div>
 
                     <div style="text-align: center; margin-top: 24px;">

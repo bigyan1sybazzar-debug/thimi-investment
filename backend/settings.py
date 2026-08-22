@@ -126,16 +126,16 @@ CSRF_TRUSTED_ORIGINS = [
     'https://thimi-investment-aa.up.railway.app',
 ] + [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
 
-# Email Settings (Gmail SMTP)
+# Email Settings (cPanel Domain Email - SMTP SSL)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'bigyan.neupane6@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'bojs' + 'mqxj' + 'btsh' + 'epfh')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <bigyan.neupane6@gmail.com>')
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'mail.thimiinvestment.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 465))
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'admin@thimiinvestment.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'Qwater123@')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Thimi Investment Group <admin@thimiinvestment.com>')
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 30))
 
 # Google OAuth Credentials
 try:
@@ -146,9 +146,23 @@ except ImportError:
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
+# Microsoft Teams Graph API Credentials
+try:
+    from decouple import config
+    TEAMS_TENANT_ID = config('TEAMS_TENANT_ID', default=os.environ.get('TEAMS_TENANT_ID', ''))
+    TEAMS_CLIENT_ID = config('TEAMS_CLIENT_ID', default=os.environ.get('TEAMS_CLIENT_ID', ''))
+    TEAMS_CLIENT_SECRET = config('TEAMS_CLIENT_SECRET', default=os.environ.get('TEAMS_CLIENT_SECRET', ''))
+    TEAMS_ORGANIZER_ID = config('TEAMS_ORGANIZER_ID', default=os.environ.get('TEAMS_ORGANIZER_ID', ''))
+except ImportError:
+    TEAMS_TENANT_ID = os.environ.get('TEAMS_TENANT_ID', '')
+    TEAMS_CLIENT_ID = os.environ.get('TEAMS_CLIENT_ID', '')
+    TEAMS_CLIENT_SECRET = os.environ.get('TEAMS_CLIENT_SECRET', '')
+    TEAMS_ORGANIZER_ID = os.environ.get('TEAMS_ORGANIZER_ID', '')
+
 import sys
 print("DIAGNOSTIC — GOOGLE_CLIENT_ID is set in env:", bool(GOOGLE_CLIENT_ID), file=sys.stderr)
-print("DIAGNOSTIC — All env var names:", [k for k in os.environ.keys() if k.startswith(('GOOGLE', 'RAILWAY', 'DATABASE', 'SECRET', 'DEBUG'))], file=sys.stderr)
+print("DIAGNOSTIC — TEAMS_CLIENT_ID is set in env:", bool(TEAMS_CLIENT_ID), file=sys.stderr)
+print("DIAGNOSTIC — All env var names:", [k for k in os.environ.keys() if k.startswith(('GOOGLE', 'TEAMS', 'RAILWAY', 'DATABASE', 'SECRET', 'DEBUG'))], file=sys.stderr)
 
 
 

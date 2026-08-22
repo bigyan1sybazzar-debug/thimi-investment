@@ -60,9 +60,37 @@
         <div id="globalNotifAlert"></div>
 
         <div class="row g-4 mb-4">
-            <!-- ── Payment Reminder Sender Card ── -->
+            <!-- ── Payment Column ── -->
             <div class="col-lg-6">
-                <div class="card border-0 shadow h-100">
+
+                <!-- ── Deadline Configuration Card ── -->
+                <div class="card border-0 shadow mb-4">
+                    <div class="card-header bg-white fw-bold py-3 d-flex align-items-center">
+                        <i class="bi bi-hourglass-split text-warning me-2 fs-5"></i>
+                        Payment &amp; Claim Deadline Settings
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="deadlineSettingsAlert"></div>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-sm-6 col-12">
+                                <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Global Remaining Days to Pay / Claim</label>
+                                <input type="number" class="form-control" id="fieldGlobalRemainingDays" placeholder="-1, 5, 10..." required>
+                            </div>
+                            <div class="col-sm-6 col-12">
+                                <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Payment Period Started On</label>
+                                <input type="text" class="form-control bg-light" id="fieldGlobalLastUpdated" readonly>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <button class="btn btn-warning w-100 fw-bold" id="saveGlobalSettingBtn" onclick="saveDeadlineConfig()">
+                                    <i class="bi bi-save me-1"></i> Save Deadline Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Payment Reminder Sender Card ── -->
+                <div class="card border-0 shadow mb-4">
                     <div class="card-header bg-white fw-bold py-3 d-flex align-items-center">
                         <i class="bi bi-clock-history text-danger me-2 fs-5"></i>
                         Automated Payment Reminders
@@ -85,6 +113,20 @@
                                 <option value="urgent">Urgent Only (Members with ≤ 3 days left)</option>
                                 <option value="all_pending">All Pending Members (Regardless of remaining days)</option>
                             </select>
+                        </div>
+
+                        <!-- Target Recipients Preview Section -->
+                        <div class="mb-3" id="recipientPreviewSection" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-semibold mb-0 small text-muted text-uppercase">Targeted Recipients (<span id="recipientCount">0</span>) &mdash; <span id="selectedCount" class="text-success">0</span> selected</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-secondary" id="previewPeriodBadge"></span>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.72rem;" onclick="toggleSelectAll()" id="selectAllBtn">Deselect All</button>
+                                </div>
+                            </div>
+                            <div class="border rounded p-2 bg-light animate__animated animate__fadeIn" style="max-height: 220px; overflow-y: auto;" id="recipientListContainer">
+                                <!-- Members list will be populated here -->
+                            </div>
                         </div>
 
                         <button class="btn btn-danger w-100 py-2 fw-semibold" id="sendRemindersBtn"
@@ -180,6 +222,61 @@
             </div>
         </div>
 
+        <!-- ── Meeting Announcement Card ── -->
+        <div class="card border-0 shadow mb-4">
+            <div class="card-header bg-white fw-bold py-3 d-flex align-items-center">
+                <i class="bi bi-calendar-event-fill text-primary me-2 fs-5"></i>
+                Meeting Announcement
+                <span class="badge bg-primary-subtle text-primary ms-2" style="font-size:0.72rem;">Send to All Members</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-3">
+                    Schedule and broadcast a meeting invitation email to all active members instantly.
+                    Admin can set the Gregorian date, Nepali BS date, time, venue, agenda and any additional notes.
+                </p>
+                <div id="meetingAnnouncementAlert"></div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Meeting Date (AD) <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="meetingDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Nepali Date (BS) <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" id="meetingNepaliDate" placeholder="e.g. 2083 Bhadra 20">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Time <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="time" class="form-control" id="meetingTime">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Venue / Location <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="meetingVenue" placeholder="e.g. Thimi Community Hall, Bhaktapur — or type 'Online via Teams'">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold small mb-0">Online Meeting Link (Teams / Zoom) <span class="text-muted fw-normal">(optional)</span></label>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 fw-bold" style="font-size:0.75rem;" id="autoGenTeamsBtn" onclick="autoGenerateTeamsMeeting()">
+                                <i class="bi bi-microsoft me-1"></i> Auto-Generate Teams Link
+                            </button>
+                        </div>
+                        <input type="url" class="form-control" id="meetingOnlineLink" placeholder="https://teams.microsoft.com/l/meetup-join/... or https://zoom.us/j/...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Agenda <span class="text-muted fw-normal">(one item per line)</span></label>
+                        <textarea class="form-control" id="meetingAgenda" rows="4" placeholder="1. Financial review&#10;2. Loan updates&#10;3. New members discussion"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Note from Admin <span class="text-muted fw-normal">(optional)</span></label>
+                        <textarea class="form-control" id="meetingNote" rows="4" placeholder="Any additional message for members..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100 py-2 fw-semibold" id="sendMeetingBtn" onclick="sendMeetingAnnouncement()">
+                            <i class="bi bi-send-fill me-2"></i> Send Meeting Announcement to All Members
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
     {% include 'includes/footer.html' %}
@@ -236,6 +333,26 @@
     </div>
 </div>
 
+<!-- ── Email Outline Preview Modal ────────────────────────────────── -->
+<div class="modal fade" id="emailOutlineModal" tabindex="-1" aria-labelledby="emailOutlineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header" style="background: linear-gradient(135deg,#1e3a8a,#2563eb); color:#fff;">
+                <h5 class="modal-title fw-bold" id="emailOutlineModalLabel">
+                    <i class="bi bi-eye me-2"></i> Email Outline Preview
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="background: #f1f5f9; max-height: 70vh; overflow-y: auto;">
+                <div id="emailPreviewContainer"></div>
+            </div>
+            <div class="modal-footer bg-light border-top">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close Preview</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 
@@ -245,6 +362,7 @@
     window.onload = function () {
         loadNotificationStatus();
         loadSystemMessages();
+        document.getElementById("reminderTarget").addEventListener("change", updateRecipientPreview);
     };
 
     async function loadSystemMessages() {
@@ -385,7 +503,7 @@
                     if (modal) modal.hide();
                 }, 2000);
             } else {
-                alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-1"></i> ${res ? (res.detail || "Error") : 'Failed to send'}</div>`;
+alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-1"></i> ${res ? (res.detail || "Error") : 'Failed to send'}</div>`;
                 btn.disabled = false;
                 btn.innerHTML = `<i class="bi bi-send me-1"></i> Send Reply Email`;
             }
@@ -396,12 +514,296 @@
         }
     }
 
+    let globalStatusData = null;
+    let globalInitialDays = 0;
 
-    async function loadNotificationStatus() {
+    function getFineDetails(elapsed, initialDays) {
+        const daysOverdue = Math.max(0, elapsed - initialDays);
+        let fine = 0;
+        let fineStatus = "";
+        let fineColor = "#16a34a";
+
+        if (daysOverdue === 0) {
+            fine = 0;
+            fineStatus = "Payment deadline today — No fine yet";
+            fineColor = "#16a34a";
+        } else if (daysOverdue <= 10) {
+            fine = 200;
+            fineStatus = `Day ${daysOverdue} overdue — Flat fine Rs. 200 (Days 1–10)`;
+            fineColor = "#d97706";
+        } else {
+            const dailyFineDays = daysOverdue - 10;
+            fine = 200 + dailyFineDays * 100;
+            fineStatus = `Day ${daysOverdue} overdue — Rs. 200 + Rs. 100/day × ${dailyFineDays} days`;
+            fineColor = "#dc2626";
+        }
+
+        return { fine, fineStatus, fineColor, daysOverdue };
+    }
+
+    function updateRecipientPreview() {
+        const previewSection = document.getElementById("recipientPreviewSection");
+        const listContainer = document.getElementById("recipientListContainer");
+        const countSpan = document.getElementById("recipientCount");
+        const periodBadge = document.getElementById("previewPeriodBadge");
+
+        if (!globalStatusData || !previewSection || !listContainer) return;
+
+        const target = document.getElementById("reminderTarget").value;
+        const recipients = target === 'urgent' ? globalStatusData.urgent_members : globalStatusData.pending_members;
+
+        countSpan.innerText = recipients ? recipients.length : 0;
+
+        const monthNames = [
+            '', 'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthName = monthNames[globalStatusData.cur_month] || globalStatusData.cur_month;
+        periodBadge.innerText = `${monthName} ${globalStatusData.cur_year}`;
+
+        if (!recipients || recipients.length === 0) {
+            listContainer.innerHTML = '<div class="text-center text-muted py-3 small">No members in target group.</div>';
+            previewSection.style.display = "block";
+            return;
+        }
+
+        listContainer.innerHTML = recipients.map(m => {
+            const { fine, fineStatus, fineColor } = getFineDetails(m.elapsed, globalInitialDays);
+            const totalDue = 5000 + fine;
+            const daysLeft = m.days_left;
+            const safeId = m.member_id.replace(/[^a-zA-Z0-9]/g, '_');
+
+            return `
+            <div class="d-flex align-items-center border-bottom py-2 px-2 bg-white mb-2 rounded shadow-2xs" id="row_${safeId}">
+                <!-- Checkbox -->
+                <div class="me-2" style="flex-shrink:0;">
+                    <input type="checkbox" class="form-check-input recipient-cb" id="cb_${safeId}"
+                        data-member-id="${m.member_id}" data-email="${m.email || ''}"
+                        checked onchange="updateSelectedCount()" style="width:16px;height:16px;cursor:pointer;">
+                </div>
+                <div style="flex: 1; min-width: 0; padding-right: 12px;">
+                    <label class="fw-bold text-dark small text-truncate mb-0" for="cb_${safeId}" style="cursor:pointer;">${m.name} <span class="text-muted fw-normal">(${m.member_id})</span></label>
+                    <div class="text-muted text-truncate" style="font-size:0.75rem;">${m.email || 'No email'} &bull; ${m.elapsed} days elapsed</div>
+                    <div style="font-size:0.75rem; color:${fineColor}; font-weight: 600; margin-top: 2px;">
+                        Fine: Rs. ${fine} (${fineStatus.split(' — ')[0]})
+                    </div>
+                </div>
+                <div class="text-end" style="flex-shrink: 0; width: 140px;">
+                    <div class="fw-bold text-danger small">Total: Rs. ${totalDue.toLocaleString()}</div>
+                    <div class="text-muted small" style="font-size:0.75rem; margin-top: 1px;">
+                        ${daysLeft <= 0 ? '<span class="badge bg-danger-subtle text-danger">Overdue</span>' : `<span class="badge bg-warning-subtle text-warning-emphasis">${daysLeft} days left</span>`}
+                    </div>
+                    <button class="btn btn-outline-primary btn-xs py-0 px-2 mt-1 fw-bold" style="font-size:0.7rem; border-radius: 4px;" onclick="showEmailOutline('${m.name.replace(/'/g, "\'")}', '${m.member_id}', '${m.email || ''}', ${m.elapsed})">
+                        <i class="bi bi-eye-fill me-1"></i> Preview Email
+                    </button>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        previewSection.style.display = "block";
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        const checked = document.querySelectorAll('.recipient-cb:checked').length;
+        const total = document.querySelectorAll('.recipient-cb').length;
+        const el = document.getElementById('selectedCount');
+        if (el) el.innerText = checked;
+
+        // Update toggle button text
+        const btn = document.getElementById('selectAllBtn');
+        if (btn) btn.innerText = checked === total ? 'Deselect All' : 'Select All';
+
+        // Dim unchecked rows visually
+        document.querySelectorAll('.recipient-cb').forEach(cb => {
+            const row = cb.closest('[id^="row_"]');
+            if (row) row.style.opacity = cb.checked ? '1' : '0.45';
+        });
+    }
+
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.recipient-cb');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        updateSelectedCount();
+    }
+
+    function showEmailOutline(memberName, memberId, email, elapsed) {
+        const initialDays = globalInitialDays;
+        const curMonth = globalStatusData.cur_month;
+        const curYear = globalStatusData.cur_year;
+        const daysLeft = globalStatusData.days_left;
+
+        const monthNames = [
+            '', 'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthName = monthNames[curMonth] || curMonth;
+
+        const { fine, fineStatus, fineColor, daysOverdue } = getFineDetails(elapsed, initialDays);
+        const totalDue = 5000 + fine;
+
+        const isUrgent = daysLeft <= 3;
+        const urgencyColor = isUrgent ? '#dc2626' : '#d97706';
+        const urgencyBg = isUrgent ? '#fef2f2' : '#fffbeb';
+        const urgencyBorder = isUrgent ? '#dc2626' : '#f59e0b';
+
+        let remainingText = "";
+        if (daysLeft > 0) {
+            remainingText = `⏳ ${daysLeft} Day(s) Remaining Before Deadline`;
+        } else if (daysLeft === 0) {
+            remainingText = "⏳ Deadline is today";
+        } else {
+            remainingText = `⏳ Deadline passed ${Math.abs(daysLeft)} day(s) ago`;
+        }
+
+        const html = `
+    <!-- Envelope Header Info -->
+    <div style="background: #ffffff; border-bottom: 2px solid #e2e8f0; padding: 18px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; line-height: 1.5; color: #334155; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.02);">
+        <div style="margin-bottom: 6px;">
+            <span style="color: #64748b; font-weight: 600; display: inline-block; width: 70px;">From:</span>
+            <span style="color: #0f172a;">Thimi Investment Group &lt;admin@thimiinvestment.com&gt;</span>
+        </div>
+        <div style="margin-bottom: 6px;">
+            <span style="color: #64748b; font-weight: 600; display: inline-block; width: 70px;">To:</span>
+            <span style="color: #0f172a;"><strong>${memberName}</strong> &lt;${email || 'No email added'}&gt;</span>
+        </div>
+        <div style="margin-bottom: 0;">
+            <span style="color: #64748b; font-weight: 600; display: inline-block; width: 70px;">Subject:</span>
+            <span style="color: #0f172a; font-weight: 700;">⚠️ Action Required: Payment Pending for ${monthName} ${curYear} — Thimi Investment</span>
+        </div>
+    </div>
+
+    <!-- Email Body Area -->
+    <div style="font-family: Arial, sans-serif; background:#f1f5f9; padding: 32px 24px; box-sizing: border-box;">
+      <div style="background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; max-width:600px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%); padding:24px; text-align:center;">
+              <h2 style="color:#ffffff; margin:0; font-size:20px; font-weight:700; letter-spacing:0.5px;">Thimi Investment Group</h2>
+              <p style="color:#bfdbfe; margin:4px 0 0 0; font-size:12px; letter-spacing:1px; text-transform:uppercase;">Monthly Payment Reminder</p>
+          </div>
+
+          <div style="padding:24px 30px;">
+              <p style="font-size:15px; color:#1e293b; margin:0 0 4px 0;">Dear <strong>${memberName}</strong>,</p>
+              <p style="font-size:13px; color:#64748b; margin:0 0 20px 0;">Member ID: <strong>${memberId}</strong></p>
+
+              <div style="background:${urgencyBg}; border:1px solid ${urgencyBorder}; border-left:5px solid ${urgencyBorder}; border-radius:8px; padding:14px 16px; margin-bottom:20px;">
+                <p style="margin:0; font-size:14px; color:#1e293b; font-weight:600;">
+                  ⚠️ Your monthly payment for <span style="color:${urgencyColor};">${monthName} ${curYear}</span> has not been submitted yet.
+                </p>
+                <p style="margin:8px 0 0 0; font-size:13px; color:${urgencyColor}; font-weight:700;">
+                  ${remainingText}
+                </p>
+              </div>
+
+              <div style="background:#fff7ed; border:2px solid #fb923c; border-radius:10px; padding:18px; margin-bottom:20px; text-align:center;">
+                <p style="margin:0 0 4px 0; font-size:12px; color:#92400e; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Total Amount Due</p>
+                <p style="margin:0; font-size:32px; font-weight:800; color:#dc2626;">Rs. ${totalDue.toLocaleString()}</p>
+                <p style="margin:6px 0 0 0; font-size:12px; color:#78350f;">
+                  Monthly Deposit: <strong>Rs. 5,000</strong> &nbsp;+&nbsp; Fine: <strong style="color:${fineColor};">Rs. ${fine}</strong>
+                </p>
+                <p style="margin:4px 0 0 0; font-size:11px; color:${fineColor};">${fineStatus}</p>
+              </div>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; border-collapse: collapse;">
+                <tr style="background:#f8fafc;">
+                  <td style="padding:10px 14px; font-size:13px; color:#64748b; border-bottom:1px solid #e2e8f0; font-weight:600; width:40%;">Period</td>
+                  <td style="padding:10px 14px; font-size:13px; color:#1e293b; border-bottom:1px solid #e2e8f0; font-weight:600;">${monthName} ${curYear}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; font-size:13px; color:#64748b; border-bottom:1px solid #e2e8f0;">Days Elapsed</td>
+                  <td style="padding:10px 14px; font-size:13px; color:#1e293b; border-bottom:1px solid #e2e8f0;">${elapsed} day(s)</td>
+                </tr>
+                <tr style="background:#f8fafc;">
+                  <td style="padding:10px 14px; font-size:13px; color:#64748b; border-bottom:1px solid #e2e8f0;">Days Remaining</td>
+                  <td style="padding:10px 14px; font-size:13px; font-weight:700; color:${urgencyColor}; border-bottom:1px solid #e2e8f0;">${daysLeft} day(s)</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; font-size:13px; color:#64748b;">Current Fine</td>
+                  <td style="padding:10px 14px; font-size:13px; font-weight:700; color:${fineColor};">Rs. ${fine}</td>
+                </tr>
+              </table>
+
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; margin-bottom:20px; font-size:12px; color:#475569; line-height: 1.5;">
+                <strong style="color: #1e293b; display: block; margin-bottom: 6px;">📌 Fine Structure Info:</strong>
+                • Days 1 to 10: Rs. 200 flat fine<br/>
+                • After 10 days: Rs. 200 + Rs. 100/day additional
+              </div>
+
+              <p style="font-size:13px; color:#334155; margin:0 0 20px 0; line-height: 1.5;">
+                Please log into your member dashboard and submit your payment claim immediately to avoid further accumulation of fines.
+              </p>
+
+              <div style="text-align:center;">
+                <a href="https://www.thimiinvestment.com/member/claim-payment/"
+                   style="background:linear-gradient(135deg,#1e3a8a,#2563eb); color:#ffffff; text-decoration:none; padding:12px 28px; font-size:14px; font-weight:700; border-radius:6px; display:inline-block;">
+                  Submit Payment Now →
+                </a>
+              </div>
+          </div>
+
+          <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:16px; text-align:center;">
+              <p style="margin:0; font-size:11px; color:#94a3b8; line-height: 1.4;">
+                This is an automated notification from Thimi Investment Group.<br/>
+                Please do not reply to this email. For queries, contact your group admin.
+              </p>
+          </div>
+      </div>
+    </div>`;
+
+        document.getElementById("emailPreviewContainer").innerHTML = html;
+        const modal = new bootstrap.Modal(document.getElementById('emailOutlineModal'));
+        modal.show();
+    }
+
+    async function saveDeadlineConfig() {
+        const btn = document.getElementById("saveGlobalSettingBtn");
+        const alertDiv = document.getElementById("deadlineSettingsAlert");
+        if (!btn || !alertDiv) return;
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saving...`;
+        alertDiv.innerHTML = "";
+
+        const payload = {
+            remaining_days: parseInt(document.getElementById("fieldGlobalRemainingDays").value) || 0
+        };
 
         try {
+            const result = await apiRequest("/deposits/settings/", "POST", payload);
+            if (result && !result.detail) {
+                alertDiv.innerHTML = `<div class="alert alert-success py-2 small"><i class="bi bi-check-circle-fill me-2"></i>Deadline configuration saved successfully!</div>`;
+                document.getElementById("fieldGlobalLastUpdated").value = result.remaining_days_updated_at || "—";
+                setTimeout(() => alertDiv.innerHTML = "", 3000);
+
+                // Re-fetch all status details to update preview lists with new remaining days immediately!
+                await loadNotificationStatus();
+            } else {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-2"></i>Failed: ${result ? (result.detail || JSON.stringify(result)) : 'Unknown error'}</div>`;
+            }
+        } catch (e) {
+            alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-2"></i>Connection Error: ${e}</div>`;
+        }
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-save me-1"></i> Save Deadline Configuration`;
+    }
+
+    async function loadNotificationStatus() {
+        try {
+            // Fetch deposits settings
+            const settingsData = await apiRequest("/deposits/settings/");
+            if (settingsData) {
+                const daysInput = document.getElementById("fieldGlobalRemainingDays");
+                const lastUpdatedInput = document.getElementById("fieldGlobalLastUpdated");
+                if (daysInput) daysInput.value = settingsData.remaining_days !== undefined ? settingsData.remaining_days : 0;
+                if (lastUpdatedInput) lastUpdatedInput.value = settingsData.remaining_days_updated_at || "Not scheduled yet";
+            }
+
+            // Fetch notification details
             const data = await apiRequest("/notifications/status/");
             if (data && data.total_members !== undefined) {
+                globalStatusData = data;
                 document.getElementById("statTotalMembers").innerText = data.total_members;
                 document.getElementById("statPendingCount").innerText = data.pending_count;
                 document.getElementById("statUrgentCount").innerText = data.urgent_count;
@@ -409,6 +811,16 @@
                 if (data.smtp_user) {
                     document.getElementById("smtpUserBadge").innerText = data.smtp_user;
                 }
+
+                const daysLeft = data.days_left;
+                const members = data.pending_members || [];
+                let elapsed = 0;
+                if (members.length > 0) {
+                    elapsed = members[0].elapsed || 0;
+                }
+                globalInitialDays = daysLeft + elapsed;
+
+                updateRecipientPreview();
             }
         } catch (e) {
             console.error("Status load failed:", e);
@@ -420,12 +832,21 @@
         const btn = document.getElementById("sendRemindersBtn");
         const alertDiv = document.getElementById("globalNotifAlert");
 
+        // Collect only checked member IDs
+        const checkedBoxes = document.querySelectorAll('.recipient-cb:checked');
+        const selectedMemberIds = Array.from(checkedBoxes).map(cb => cb.dataset.memberId);
+
+        if (selectedMemberIds.length === 0) {
+            alertDiv.innerHTML = `<div class="alert alert-warning mb-4"><i class="bi bi-exclamation-triangle-fill me-2"></i>No recipients selected. Please check at least one member.</div>`;
+            return;
+        }
+
         btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Sending Emails via Zoho SMTP...`;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Sending to ${selectedMemberIds.length} member(s)...`;
         alertDiv.innerHTML = "";
 
         try {
-            const data = await apiRequest("/notifications/send-reminders/", "POST", { target: target });
+            const data = await apiRequest("/notifications/send-reminders/", "POST", { target: target, member_ids: selectedMemberIds });
             if (data && data.message) {
                 alertDiv.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show mb-4">
@@ -508,6 +929,119 @@
         btn.innerHTML = `<i class="bi bi-broadcast me-2"></i> Send Broadcast Email`;
     });
 
+
+    async function autoGenerateTeamsMeeting() {
+        const btn = document.getElementById("autoGenTeamsBtn");
+        const linkInput = document.getElementById("meetingOnlineLink");
+        const alertDiv = document.getElementById("meetingAnnouncementAlert");
+        const meetingDate = document.getElementById("meetingDate").value.trim();
+        const meetingTime = document.getElementById("meetingTime").value.trim();
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Creating Teams Link...`;
+        alertDiv.innerHTML = "";
+
+        try {
+            const data = await apiRequest("/notifications/generate-teams-meeting/", "POST", {
+                meeting_date: meetingDate,
+                meeting_time: meetingTime,
+                subject: "Thimi Investment Group General Meeting"
+            });
+
+            if (data && data.join_url) {
+                linkInput.value = data.join_url;
+                alertDiv.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show py-2 small">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong>Microsoft Teams Meeting Created!</strong> Join link has been filled into the form.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+                // If venue is empty, suggest Online via Teams
+                const venueInput = document.getElementById("meetingVenue");
+                if (!venueInput.value) {
+                    venueInput.value = "Online via Microsoft Teams";
+                }
+            } else {
+                const errMsg = data ? (data.detail || JSON.stringify(data)) : "Failed to generate Teams meeting.";
+                const helpMsg = data && data.help ? `<br/><small class="text-muted">${data.help}</small>` : "";
+                alertDiv.innerHTML = `
+                    <div class="alert alert-warning alert-dismissible fade show py-2 small">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Teams API Notice:</strong> ${errMsg}${helpMsg}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+            }
+        } catch (e) {
+            alertDiv.innerHTML = `<div class="alert alert-danger py-2 small">Teams generation error: ${e}</div>`;
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-microsoft me-1"></i> Auto-Generate Teams Link`;
+    }
+
+    async function sendMeetingAnnouncement() {
+        const btn = document.getElementById("sendMeetingBtn");
+        const alertDiv = document.getElementById("meetingAnnouncementAlert");
+
+        const meetingDate   = document.getElementById("meetingDate").value.trim();
+        const nepaliDate    = document.getElementById("meetingNepaliDate").value.trim();
+        const meetingTime   = document.getElementById("meetingTime").value.trim();
+        const venue         = document.getElementById("meetingVenue").value.trim();
+        const meetingLink   = document.getElementById("meetingOnlineLink").value.trim();
+        const agenda        = document.getElementById("meetingAgenda").value.trim();
+        const customNote    = document.getElementById("meetingNote").value.trim();
+
+        if (!meetingDate || !venue) {
+            alertDiv.innerHTML = `<div class="alert alert-warning py-2 small"><i class="bi bi-exclamation-triangle-fill me-2"></i>Please fill in the Meeting Date and Venue fields.</div>`;
+            return;
+        }
+
+        // Format time for display
+        let timeDisplay = "";
+        if (meetingTime) {
+            const [h, m] = meetingTime.split(":");
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? "PM" : "AM";
+            const h12 = ((hour % 12) || 12);
+            timeDisplay = h12 + ":" + m + " " + ampm;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Sending Meeting Announcement...`;
+        alertDiv.innerHTML = "";
+
+        try {
+            const data = await apiRequest("/notifications/send-meeting/", "POST", {
+                meeting_date: meetingDate,
+                nepali_date: nepaliDate,
+                meeting_time: timeDisplay,
+                venue: venue,
+                meeting_link: meetingLink,
+                agenda: agenda,
+                custom_note: customNote,
+            });
+
+            if (data && data.message) {
+                alertDiv.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <strong>Success!</strong> ${data.message}
+                        ${data.failed_count > 0 ? `<br/><small class="text-danger">Failed: ${data.failed_count} recipient(s).</small>` : ""}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+                // Clear form
+                document.getElementById("meetingAgenda").value = "";
+                document.getElementById("meetingNote").value = "";
+            } else if (data) {
+                alertDiv.innerHTML = `<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle-fill me-2"></i>${data.detail || JSON.stringify(data)}</div>`;
+            }
+        } catch (e) {
+            alertDiv.innerHTML = `<div class="alert alert-danger py-2 small">Request failed: ${e}</div>`;
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-send-fill me-2"></i> Send Meeting Announcement to All Members`;
+    }
 
 </script>
 {% endblock %}
