@@ -18,7 +18,24 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = ALLOWED_HOSTS_ENV.split(',') if ALLOWED_HOSTS_ENV else ['*']
+if ALLOWED_HOSTS_ENV:
+    # Strip any http://, https://, whitespace or trailing slashes that cause 400 Bad Request
+    parsed_hosts = []
+    for h in ALLOWED_HOSTS_ENV.split(','):
+        clean_h = h.strip().replace('https://', '').replace('http://', '').split('/')[0].split(':')[0]
+        if clean_h:
+            parsed_hosts.append(clean_h)
+    # Ensure default domains and localhost are always allowed
+    for default_h in ['localhost', '127.0.0.1', 'thimiinvestment.com', 'www.thimiinvestment.com', '.thimiinvestment.com', '.up.railway.app']:
+        if default_h not in parsed_hosts:
+            parsed_hosts.append(default_h)
+    ALLOWED_HOSTS = parsed_hosts
+else:
+    ALLOWED_HOSTS = ['*']
+
+# Reverse proxy / CGI headers support
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -113,8 +130,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
 }
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 MEDIA_URL = '/media/'
@@ -124,6 +143,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 CSRF_TRUSTED_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 CSRF_TRUSTED_ORIGINS = [
     'https://thimi-investment-aa.up.railway.app',
+    'https://www.thimiinvestment.com',
+    'https://thimiinvestment.com',
+    'http://www.thimiinvestment.com',
+    'http://thimiinvestment.com',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1',
+    'http://localhost',
 ] + [o.strip() for o in CSRF_TRUSTED_ORIGINS_ENV.split(',') if o.strip()]
 
 # Email Settings (cPanel Domain Email - SMTP SSL)

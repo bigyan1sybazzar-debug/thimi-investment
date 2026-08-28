@@ -222,12 +222,111 @@
             </div>
         </div>
 
+        <!-- ── Meeting Poll Manager Card ── -->
+        <div class="card border-0 shadow mb-4" style="border-radius:14px; overflow:hidden;">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center"
+                 style="background: linear-gradient(135deg, #6f42c1 0%, #4f46e5 100%); color:#fff;">
+                <span class="fw-bold fs-6">
+                    <i class="bi bi-calendar-check me-2"></i>Meeting Poll Manager
+                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-white text-dark" id="adminPollsCountBadge">0 Active Polls</span>
+                    <span class="badge bg-success d-flex align-items-center gap-1" id="liveRefreshBadge" style="font-size:0.72rem;">
+                        <span class="rounded-circle bg-white d-inline-block" style="width:7px;height:7px;animation:blink 1.2s infinite;"></span> LIVE
+                    </span>
+                </div>
+            </div>
+
+            <!-- Create Poll Panel -->
+            <div class="card-body p-4" style="background:#faf9ff;">
+                <h6 class="fw-bold text-muted text-uppercase mb-3" style="font-size:0.78rem; letter-spacing:.05em;">
+                    <i class="bi bi-plus-circle-fill text-primary me-1"></i> Create New Poll
+                </h6>
+                <div id="adminPollAlert"></div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Poll Title / Topic *</label>
+                        <input type="text" class="form-control" id="pollTitle" placeholder="e.g. September Monthly Meeting">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Meeting Venue / Link</label>
+                        <input type="text" class="form-control" id="pollVenue" placeholder="Online via Teams" value="Online via Teams">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Description / Agenda</label>
+                        <textarea class="form-control" id="pollDescription" rows="2"
+                            placeholder="e.g. Vote for your preferred time. The most-voted option will be confirmed."></textarea>
+                    </div>
+
+                    <!-- Calendar Helper -->
+                    <div class="col-12">
+                        <div class="p-3 rounded border" style="background:#eef2ff;">
+                            <label class="form-label fw-semibold small mb-2" style="color:#4f46e5;">
+                                <i class="bi bi-calendar-plus me-1"></i>Quick Add via Calendar
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <input type="datetime-local" class="form-control form-control-sm" id="adminHelperDateTime" style="max-width:220px;">
+                                <input type="text" class="form-control form-control-sm flex-grow-1" id="adminHelperNote"
+                                    placeholder="Label (e.g. Saturday Morning / Bhadra 20)">
+                                <button type="button" class="btn btn-sm btn-primary fw-semibold" onclick="addCalendarOptionToPoll()">
+                                    <i class="bi bi-plus-lg me-1"></i>Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Options -->
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small d-flex justify-content-between align-items-center">
+                            <span>Time &amp; Date Options <span class="text-danger">*</span> <small class="text-muted fw-normal">(min 2 required)</small></span>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2"
+                                style="font-size:0.75rem;" onclick="addPollOptionField()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Manual Option
+                            </button>
+                        </label>
+                        <div id="pollOptionsContainer"></div>
+                    </div>
+
+                    <div class="col-12">
+                        <button class="btn btn-success w-100 py-2 fw-semibold" onclick="createMeetingPoll()" id="createPollBtn">
+                            <i class="bi bi-send-fill me-2"></i>Publish Poll to All Members
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Results Panel -->
+            <div class="card-body border-top p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-uppercase mb-0" style="font-size:0.78rem; letter-spacing:.05em; color:#4f46e5;">
+                        <i class="bi bi-bar-chart-fill me-1"></i>Active Polls &amp; Live Voting Results
+                    </h6>
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="loadAdminPolls()" title="Refresh now">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div id="adminPollsListContainer">
+                    <div class="text-center text-muted py-4">
+                        <span class="spinner-border spinner-border-sm me-2"></span>Loading live results...
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ── Meeting Announcement Card ── -->
         <div class="card border-0 shadow mb-4">
-            <div class="card-header bg-white fw-bold py-3 d-flex align-items-center">
-                <i class="bi bi-calendar-event-fill text-primary me-2 fs-5"></i>
-                Meeting Announcement
-                <span class="badge bg-primary-subtle text-primary ms-2" style="font-size:0.72rem;">Send to All Members</span>
+            <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span>
+                    <i class="bi bi-calendar-event-fill text-primary me-2 fs-5"></i>
+                    Meeting Announcement
+                    <span class="badge bg-primary-subtle text-primary ms-2" style="font-size:0.72rem;">Send to All Members</span>
+                </span>
+                <div class="d-flex align-items-center gap-2" style="max-width: 320px;">
+                    <label class="small text-nowrap fw-semibold text-muted mb-0">Import Poll:</label>
+                    <select class="form-select form-select-sm" id="meetingImportPollSelect" onchange="importSelectedPollDetails()">
+                        <option value="">-- Select Active Poll --</option>
+                    </select>
+                </div>
             </div>
             <div class="card-body p-4">
                 <p class="text-muted small mb-3">
@@ -235,6 +334,7 @@
                     Admin can set the Gregorian date, Nepali BS date, time, venue, agenda and any additional notes.
                 </p>
                 <div id="meetingAnnouncementAlert"></div>
+
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small">Meeting Date (AD) <span class="text-danger">*</span></label>
@@ -353,6 +453,12 @@
     </div>
 </div>
 
+<style>
+@keyframes blink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(0.7); }
+}
+</style>
 {% endblock %}
 
 
@@ -362,8 +468,341 @@
     window.onload = function () {
         loadNotificationStatus();
         loadSystemMessages();
+        loadAdminPolls();
         document.getElementById("reminderTarget").addEventListener("change", updateRecipientPreview);
+
+        // Auto-refresh live voting results every 10 seconds
+        setInterval(() => { loadAdminPolls(); }, 10000);
     };
+
+    // ──────────────────────────────────────────────
+    // Admin Meeting Polls Management
+    // ──────────────────────────────────────────────
+    
+    // Global variable to store active polls to retrieve option details later
+    let activePollsList = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Pre-populate with two default manual inputs if container exists
+        const container = document.getElementById("pollOptionsContainer");
+        if (container) {
+            addPollOptionField();
+            addPollOptionField();
+        }
+    });
+
+    function addPollOptionField(initialValue = "") {
+        const container = document.getElementById("pollOptionsContainer");
+        const div = document.createElement("div");
+        div.className = "d-flex gap-2 mb-2 animate__animated animate__fadeInDown";
+        div.innerHTML = `
+            <input type="text" class="form-control poll-opt-input" placeholder="e.g. Saturday, Sep 5 @ 10:00 AM (AD) / Bhadra 20 (BS)" value="${initialValue}" required>
+            <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addCalendarOptionToPoll() {
+        const dtInput = document.getElementById("adminHelperDateTime");
+        const noteInput = document.getElementById("adminHelperNote");
+        if (!dtInput || !dtInput.value) {
+            alert("Please select a date & time first.");
+            return;
+        }
+
+        const dateObj = new Date(dtInput.value);
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        
+        let hours = dateObj.getHours();
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const formattedTime = `${year}-${month}-${day} @ ${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+        
+        let optionText = formattedTime;
+        if (noteInput && noteInput.value.trim()) {
+            optionText += ` (${noteInput.value.trim()})`;
+        }
+
+        addPollOptionField(optionText);
+        
+        // Reset helper fields
+        dtInput.value = "";
+        noteInput.value = "";
+    }
+
+
+    async function createMeetingPoll() {
+        const btn = document.getElementById("createPollBtn");
+        const alertDiv = document.getElementById("adminPollAlert");
+        const title = document.getElementById("pollTitle").value.trim();
+        const venue = document.getElementById("pollVenue").value.trim();
+        const description = document.getElementById("pollDescription").value.trim();
+        
+        const optionInputs = document.querySelectorAll(".poll-opt-input");
+        const options = [];
+        optionInputs.forEach(input => {
+            const val = input.value.trim();
+            if (val) options.push(val);
+        });
+
+        if (!title) {
+            alertDiv.innerHTML = `<div class="alert alert-warning py-2 small">Poll Title/Topic is required.</div>`;
+            return;
+        }
+        if (options.length < 2) {
+            alertDiv.innerHTML = `<div class="alert alert-warning py-2 small">Please provide at least 2 time options.</div>`;
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing Poll...`;
+        alertDiv.innerHTML = "";
+
+        try {
+            const data = await apiRequest("/notifications/polls/create/", "POST", {
+                title,
+                venue,
+                description,
+                options
+            });
+
+            if (data && data.message) {
+                alertDiv.innerHTML = `<div class="alert alert-success py-2 small"><i class="bi bi-check-circle-fill me-2"></i><strong>Success!</strong> ${data.message}</div>`;
+                // Reset form
+                document.getElementById("pollTitle").value = "";
+                document.getElementById("pollDescription").value = "";
+                const container = document.getElementById("pollOptionsContainer");
+                container.innerHTML = `
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" class="form-control poll-opt-input" placeholder="e.g. Saturday, Sep 5 @ 10:00 AM (AD) / Bhadra 20 (BS)" required>
+                        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()" disabled><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" class="form-control poll-opt-input" placeholder="e.g. Saturday, Sep 5 @ 2:00 PM (AD) / Bhadra 20 (BS)" required>
+                        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()" disabled><i class="bi bi-trash"></i></button>
+                    </div>
+                `;
+                loadAdminPolls();
+            }
+        } catch (e) {
+            alertDiv.innerHTML = `<div class="alert alert-danger py-2 small">Request failed: ${e}</div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-plus-lg me-1"></i> Create Meeting Time Poll &amp; Publish`;
+        }
+    }
+
+    async function loadAdminPolls() {
+        const container = document.getElementById("adminPollsListContainer");
+        const countBadge = document.getElementById("adminPollsCountBadge");
+        const importSelect = document.getElementById("meetingImportPollSelect");
+        if (!container) return;
+
+        try {
+            const polls = await apiRequest("/notifications/polls/");
+            activePollsList = polls;
+            countBadge.innerText = `${polls.length} Active Poll${polls.length !== 1 ? 's' : ''}`;
+
+            // Rebuild import dropdown
+            importSelect.innerHTML = `<option value="">-- Select Active Poll --</option>`;
+            polls.forEach(poll => {
+                const opt = document.createElement("option");
+                opt.value = poll.id;
+                opt.text = poll.title;
+                importSelect.appendChild(opt);
+            });
+
+            if (polls.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5" style="color:#9ca3af;">
+                        <i class="bi bi-clipboard-x fs-1 d-block mb-2"></i>
+                        <p class="mb-0 fw-semibold">No active polls yet</p>
+                        <small>Create a poll above to start collecting member votes.</small>
+                    </div>`;
+                return;
+            }
+
+            let html = "";
+            polls.forEach(poll => {
+                const barColors = ['#6f42c1','#4f46e5','#0ea5e9','#10b981','#f59e0b','#ef4444'];
+                
+                // Sort options by vote count desc for ranking
+                const sortedOpts = [...poll.options].sort((a,b) => b.vote_count - a.vote_count);
+                const maxVotes = sortedOpts.length > 0 ? sortedOpts[0].vote_count : 0;
+
+                let optionsHtml = "";
+                poll.options.forEach((opt, idx) => {
+                    const percentage = poll.total_votes > 0 ? Math.round((opt.vote_count / poll.total_votes) * 100) : 0;
+                    const isLeading = opt.vote_count === maxVotes && maxVotes > 0;
+                    const isFinalized = poll.final_option_id === opt.id;
+                    const barColor = barColors[idx % barColors.length];
+                    const suggestedTag = opt.suggested_by
+                        ? `<span class="badge bg-light text-secondary border ms-1" style="font-size:0.68rem;">💡 ${opt.suggested_by}</span>`
+                        : "";
+
+                    const finalizeBtn = isFinalized
+                        ? `<span class="badge bg-success px-2 py-1"><i class="bi bi-patch-check-fill me-1"></i>Finalized ✓</span>`
+                        : `<button class="btn btn-sm btn-outline-success py-0 px-2 fw-semibold"
+                               style="font-size:0.73rem;" onclick="finalizePollTime(${poll.id}, ${opt.id})">
+                               <i class="bi bi-check2-circle me-1"></i>Set as Final
+                           </button>`;
+
+                    const leadingBadge = (isLeading && !isFinalized)
+                        ? `<span class="badge ms-1" style="background:#fff3cd; color:#856404; border:1px solid #ffc107; font-size:0.68rem;">🏆 Leading</span>`
+                        : "";
+
+                    const votersHtml = opt.voters.length > 0
+                        ? `<div class="mt-2 d-flex flex-wrap gap-1">
+                               ${opt.voters.map(v => `<span class="badge rounded-pill" style="background:#ede9fe; color:#6d28d9; font-size:0.7rem;">${v}</span>`).join('')}
+                           </div>`
+                        : `<div class="mt-1 text-muted" style="font-size:0.75rem;">No votes yet</div>`;
+
+                    optionsHtml += `
+                        <div class="mb-3 p-3 rounded-3 border ${isFinalized ? 'border-success' : isLeading ? 'border-warning' : 'border-light'}"
+                             style="background: ${isFinalized ? '#f0fdf4' : isLeading ? '#fffbeb' : '#fff'};">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                <div class="d-flex align-items-center flex-wrap gap-1">
+                                    <span class="fw-semibold" style="font-size:0.9rem;">${opt.text}</span>
+                                    ${leadingBadge}${suggestedTag}
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold" style="color:${barColor}; font-size:1rem;">${percentage}%</span>
+                                    <span class="text-muted small">(${opt.vote_count} vote${opt.vote_count !== 1 ? 's' : ''})</span>
+                                    ${finalizeBtn}
+                                </div>
+                            </div>
+                            <div class="progress rounded-pill mb-2" style="height:10px; background:#f1f5f9;">
+                                <div class="progress-bar rounded-pill" role="progressbar"
+                                     style="width:${percentage}%; background:${barColor}; transition: width 0.6s ease;"
+                                     aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            ${votersHtml}
+                        </div>
+                    `;
+                });
+
+                const finalizedBanner = poll.final_option_text
+                    ? `<div class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2" style="border-left:4px solid #16a34a;">
+                           <i class="bi bi-calendar-check-fill fs-5 text-success"></i>
+                           <div>
+                               <strong>Finalized Meeting Time:</strong> ${poll.final_option_text}
+                               <span class="ms-2 text-muted small">— Venue: ${poll.venue}</span>
+                           </div>
+                       </div>`
+                    : "";
+
+                html += `
+                    <div class="rounded-3 border mb-4 overflow-hidden" style="box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                        <div class="p-3 d-flex justify-content-between align-items-start"
+                             style="background: linear-gradient(90deg,#f8f7ff 0%,#eef2ff 100%); border-bottom:1px solid #e0e7ff;">
+                            <div>
+                                <h6 class="fw-bold mb-1" style="color:#3730a3;">
+                                    <i class="bi bi-calendar-event me-1"></i>${poll.title}
+                                </h6>
+                                <p class="text-muted mb-1 small">${poll.description || 'No description.'}</p>
+                                <div class="d-flex flex-wrap gap-3 small text-secondary">
+                                    <span><i class="bi bi-geo-alt me-1"></i>${poll.venue}</span>
+                                    <span><i class="bi bi-people me-1"></i><strong>${poll.total_votes}</strong> total votes</span>
+                                    <span><i class="bi bi-list-ul me-1"></i>${poll.options.length} options</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="broadcastPollInvite(${poll.id})" title="Send or Resend Email Invite to all members">
+                                    <i class="bi bi-envelope-arrow-up me-1"></i>Email Invite to Members
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="closePoll(${poll.id})" title="Close & Archive Poll">
+                                    <i class="bi bi-x-circle me-1"></i>Close
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            ${finalizedBanner}
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            container.innerHTML = `<div class="alert alert-danger py-2 small">Error loading polls: ${e}</div>`;
+        }
+    }
+
+    async function broadcastPollInvite(pollId) {
+        if (!confirm("Send meeting poll invitation email to all registered members with their voting link?")) return;
+        try {
+            const res = await apiRequest(`/notifications/polls/${pollId}/broadcast/`, "POST");
+            if (res && res.message) {
+                alert(res.message);
+            }
+        } catch (e) {
+            alert("Failed to send invitations: " + e);
+        }
+    }
+
+    async function finalizePollTime(pollId, optionId) {
+        if (!confirm("Are you sure you want to finalize this date & time option for the meeting?")) return;
+        try {
+            const res = await apiRequest("/notifications/polls/finalize/", "POST", { poll_id: pollId, option_id: optionId });
+            if (res && res.message) {
+                alert(res.message);
+                loadAdminPolls();
+            }
+        } catch (e) {
+            alert("Failed to finalize time: " + e);
+        }
+    }
+
+    async function closePoll(pollId) {
+        if (!confirm("Are you sure you want to close this poll? Members will no longer be able to vote.")) return;
+        try {
+            await apiRequest(`/notifications/polls/${pollId}/`, "DELETE");
+            loadAdminPolls();
+        } catch (e) {
+            alert("Failed to close poll: " + e);
+        }
+    }
+
+
+    function importSelectedPollDetails() {
+        const select = document.getElementById("meetingImportPollSelect");
+        const pollId = parseInt(select.value);
+        if (!pollId) return;
+
+        const poll = activePollsList.find(p => p.id === pollId);
+        if (!poll) return;
+
+        // Auto-fill venue
+        document.getElementById("meetingVenue").value = poll.venue;
+
+        // Find the option with the highest votes
+        let winningOption = null;
+        let maxVotes = -1;
+        poll.options.forEach(opt => {
+            if (opt.vote_count > maxVotes) {
+                maxVotes = opt.vote_count;
+                winningOption = opt.text;
+            }
+        });
+
+        // Set agenda helper hint with details from poll
+        document.getElementById("meetingAgenda").value = `1. Discussion on: ${poll.title}\n2. Review of time/venue voted by members`;
+        document.getElementById("meetingNote").value = `This meeting date was selected based on the member poll (Highest voted option: "${winningOption}" with ${maxVotes} vote(s)).`;
+
+        // Notify user
+        const alertDiv = document.getElementById("meetingAnnouncementAlert");
+        alertDiv.innerHTML = `
+            <div class="alert alert-info alert-dismissible fade show py-2 small">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Poll Details Imported!</strong> Filled Venue, Agenda and Note. Please set the matching final <strong>Date (AD)</strong> and <strong>Time</strong> field.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+    }
+
 
     async function loadSystemMessages() {
         const table = document.getElementById("systemMessagesTable");

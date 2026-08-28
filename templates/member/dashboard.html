@@ -123,6 +123,51 @@
         </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- Meeting Polls & Group Chat Side-by-Side (Responsive)   -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <div class="row g-3 mb-4 mt-2" id="pollsChatRow" style="display:none;">
+        <!-- Left: Meeting Polls -->
+        <div class="col-lg-6 col-12 animate__animated animate__fadeInUp">
+            <div class="card shadow-sm h-100 border-0" id="meetingPollsCard" style="border-radius:12px; overflow:hidden;">
+                <div class="card-header d-flex justify-content-between align-items-center py-2 px-3" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff;">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-calendar-event me-2"></i>Meeting Polls</h6>
+                    <span class="badge bg-white text-dark py-1 px-2" style="font-size:0.75rem;" id="activePollsBadge">0 active</span>
+                </div>
+                <div class="card-body p-0" id="pollsContainer" style="max-height: 400px; overflow-y: auto;">
+                    <div class="text-center text-muted py-4">
+                        <span class="spinner-border spinner-border-sm me-2"></span>Loading polls...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Group Chat -->
+        <div class="col-lg-6 col-12 animate__animated animate__fadeInUp">
+            <div class="card shadow-sm h-100 border-0" id="memberChatCard" style="border-radius:12px; overflow:hidden;">
+                <div class="card-header d-flex justify-content-between align-items-center py-2 px-3" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff;">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-chat-dots me-2"></i>Group Chat</h6>
+                    <button class="btn btn-xs btn-outline-light py-0 px-2 fw-semibold" style="font-size:0.75rem;" onclick="loadChatMessages()" title="Refresh">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body p-0 d-flex flex-column bg-light-subtle">
+                    <div id="chatMessages" style="height: 290px; overflow-y: auto; padding: 12px; background: #f8fafc;">
+                        <div class="text-center text-muted py-4">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Loading messages...
+                        </div>
+                    </div>
+                    <div class="border-top p-2 bg-white d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm" id="chatInput" placeholder="Type message..." maxlength="1000" onkeydown="if(event.key==='Enter')sendChatMessage()">
+                        <button class="btn btn-sm btn-success px-3" onclick="sendChatMessage()" id="chatSendBtn">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Payment History</h5>
@@ -569,9 +614,8 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div>    {% endblock %}
 
-    {% endblock %}
 
 
 
@@ -1323,6 +1367,288 @@
             btn.disabled = false;
             btn.innerHTML = "Save Settings";
         });
+
+        // ══════════════════════════════════════════════════════
+        // Meeting Polls & Voting JS
+        // ══════════════════════════════════════════════════════
+        async function loadMeetingPolls() {
+            const row = document.getElementById("pollsChatRow");
+            const container = document.getElementById("pollsContainer");
+            const badge = document.getElementById("activePollsBadge");
+            const token = localStorage.getItem("access");
+            if (!token) return;
+
+            try {
+                const res = await fetch("/api/notifications/polls/", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                if (res.status === 401) { return; } // silently skip if not authed yet
+                if (!res.ok) throw new Error("Failed to load polls");
+                const polls = await res.json();
+
+                if (polls.length === 0) {
+                    // No active polls — hide the entire row
+                    row.style.display = "none";
+                    return;
+                }
+
+                // Admin has active polls — show the row & load chat too
+                row.style.display = "";
+                loadChatMessages();
+
+                badge.innerText = `${polls.length} active`;
+
+                let html = "";
+                polls.forEach(poll => {
+                    let optionsHtml = "";
+
+                    poll.options.forEach(opt => {
+                        const isVoted = poll.user_voted_option_id === opt.id;
+                        const percentage = poll.total_votes > 0 ? Math.round((opt.vote_count / poll.total_votes) * 100) : 0;
+                        const suggestedByText = opt.suggested_by ? `<span class="badge bg-secondary-subtle text-secondary small ms-1" style="font-size: 0.7rem;">Suggested by ${opt.suggested_by}</span>` : "";
+
+                        optionsHtml += `
+                            <div class="mb-3 p-3 rounded border ${isVoted ? 'border-primary bg-light' : 'border-light-subtle'}" style="position:relative;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="d-flex align-items-center flex-wrap gap-2">
+                                        <button class="btn btn-sm ${isVoted ? 'btn-primary' : 'btn-outline-primary'} rounded-pill px-3"
+                                                onclick="votePoll(${poll.id}, ${opt.id})">
+                                            <i class="bi ${isVoted ? 'bi-check-circle-fill' : 'bi-circle'} me-1"></i>
+                                            ${opt.text}
+                                        </button>
+                                        ${suggestedByText}
+                                        ${opt.voters.length > 0 ? `<span class="text-muted small" title="Voters: ${opt.voters.join(', ')}">(${opt.voters.length} ${opt.voters.length === 1 ? 'vote' : 'votes'})</span>` : '<span class="text-muted small">(0 votes)</span>'}
+                                    </div>
+                                    <span class="fw-bold text-primary">${percentage}%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar ${isVoted ? 'bg-primary' : 'bg-secondary'}" role="progressbar" style="width: ${percentage}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    let finalizedBlock = "";
+                    if (poll.final_option_text) {
+                        finalizedBlock = `
+                            <div class="alert alert-success border-2 border-success d-flex align-items-center mb-3">
+                                <i class="bi bi-calendar-check-fill fs-4 me-3 text-success"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-1 fw-bold">Finalized Meeting Scheduled!</h6>
+                                    <p class="mb-0 small">Admin fixed the meeting time to: <strong>${poll.final_option_text}</strong>.<br/>Venue: <strong>${poll.venue}</strong>. Please mark your calendars!</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div class="p-3 border-bottom">
+                            ${finalizedBlock}
+                            <h6 class="fw-bold mb-1 text-dark">${poll.title}</h6>
+                            <p class="text-muted small mb-2">${poll.description || 'No description provided.'}</p>
+                            <div class="mb-2 text-secondary small">
+                                <span><i class="bi bi-geo-alt me-1"></i><strong>Venue:</strong> ${poll.venue}</span>
+                                <span class="ms-3"><i class="bi bi-clock me-1"></i><strong>Created:</strong> ${poll.created_at}</span>
+                            </div>
+                            <div class="mt-2">${optionsHtml}</div>
+                            <!-- Suggest a time -->
+                            <div class="mt-2 p-2 bg-light rounded border border-light-subtle">
+                                <label class="form-label small fw-semibold text-muted mb-1 d-block"><i class="bi bi-lightbulb text-warning me-1"></i>Suggest a preferable time:</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <input type="datetime-local" class="form-control form-control-sm" id="suggestDateTimeInput-${poll.id}" style="max-width: 200px;">
+                                    <input type="text" class="form-control form-control-sm flex-grow-1" id="suggestTextNote-${poll.id}" placeholder="e.g. Saturday Evening" style="min-width: 140px;">
+                                    <button class="btn btn-sm btn-outline-success" onclick="submitPollTimeSuggestion(${poll.id})">Suggest</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (err) {
+                console.error("Poll load error:", err);
+            }
+        }
+
+        async function votePoll(pollId, optionId) {
+            const token = localStorage.getItem("access");
+            try {
+                const res = await fetch("/api/notifications/polls/vote/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ poll_id: pollId, option_id: optionId })
+                });
+                if (res.ok) {
+                    loadMeetingPolls();
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || "Error voting.");
+                }
+            } catch (err) {
+                alert("Error: " + err);
+            }
+        }
+        async function submitPollTimeSuggestion(pollId) {
+            const dtInput = document.getElementById(`suggestDateTimeInput-${pollId}`);
+            const noteInput = document.getElementById(`suggestTextNote-${pollId}`);
+            if (!dtInput || !dtInput.value) {
+                alert("Please select a date & time first.");
+                return;
+            }
+
+            // Convert datetime-local value (YYYY-MM-DDTHH:MM) to a more readable string
+            const dtVal = dtInput.value; // e.g. "2026-08-25T14:30"
+            const dateObj = new Date(dtVal);
+            
+            // Format to a readable string: YYYY-MM-DD @ hh:mm AM/PM
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            
+            let hours = dateObj.getHours();
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const formattedTime = `${year}-${month}-${day} @ ${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+            
+            let finalOptionText = formattedTime;
+            if (noteInput && noteInput.value.trim()) {
+                finalOptionText += ` (${noteInput.value.trim()})`;
+            }
+
+            const token = localStorage.getItem("access");
+            try {
+                const res = await fetch("/api/notifications/polls/suggest/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ poll_id: pollId, option_text: finalOptionText })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    dtInput.value = "";
+                    if (noteInput) noteInput.value = "";
+                    loadMeetingPolls();
+                } else {
+                    alert(data.detail || "Error submitting suggestion.");
+                }
+            } catch (err) {
+                alert("Error: " + err);
+            }
+        }
+
+
+        // ══════════════════════════════════════════════════════
+        // Group Chat JS
+        // ══════════════════════════════════════════════════════
+        async function loadChatMessages() {
+            const chatBox = document.getElementById("chatMessages");
+            const token = localStorage.getItem("access");
+            try {
+                const res = await fetch("/api/notifications/chat/", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                if (!res.ok) throw new Error("Failed to load chat");
+                const messages = await res.json();
+
+                if (messages.length === 0) {
+                    chatBox.innerHTML = `<div class="text-center text-muted py-4">No messages yet. Start the conversation!</div>`;
+                    return;
+                }
+
+                let html = "";
+                messages.forEach(msg => {
+                    if (msg.is_mine) {
+                        html += `
+                            <div class="d-flex flex-column align-items-end mb-3">
+                                <div class="bg-success text-white rounded p-2 px-3 mb-1" style="max-width: 80%; word-break: break-word; border-radius: 16px 16px 0 16px !important;">
+                                    ${msg.message}
+                                </div>
+                                <small class="text-muted" style="font-size:0.75rem;">${msg.user} • ${msg.created_at}</small>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="d-flex flex-column align-items-start mb-3">
+                                <div class="bg-white text-dark border rounded p-2 px-3 mb-1 shadow-sm" style="max-width: 80%; word-break: break-word; border-radius: 16px 16px 16px 0 !important;">
+                                    ${msg.message}
+                                </div>
+                                <small class="text-muted" style="font-size:0.75rem;">${msg.user} (${msg.username}) • ${msg.created_at}</small>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Check if user is near bottom of chat before auto-scrolling
+                const isNearBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
+                
+                chatBox.innerHTML = html;
+                
+                if (isNearBottom || chatBox.innerHTML.includes("Loading messages...")) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById("chatInput");
+            const btn = document.getElementById("chatSendBtn");
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.disabled = true;
+            btn.disabled = true;
+            const token = localStorage.getItem("access");
+
+            try {
+                const res = await fetch("/api/notifications/chat/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+                if (res.ok) {
+                    input.value = "";
+                    await loadChatMessages();
+                    const chatBox = document.getElementById("chatMessages");
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+
+        // Initialize features — run after the dashboard data fetch sets up auth
+        document.addEventListener("DOMContentLoaded", () => {
+            // Load polls after a short delay to ensure token is in localStorage
+            setTimeout(() => {
+                loadMeetingPolls();
+            }, 800);
+
+            // Refresh polls every 30 seconds (chat is loaded inside loadMeetingPolls when row is visible)
+            setInterval(() => {
+                loadMeetingPolls();
+                const row = document.getElementById("pollsChatRow");
+                if (row && row.style.display !== "none") {
+                    loadChatMessages();
+                }
+            }, 30000);
+        });
     </script>
+
 
     {% endblock %}

@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from accounts.models import User, Member, GlobalSetting
 from deposits.models import Deposit
-from .models import SystemNotification
+from .models import SystemNotification, MeetingPoll, MeetingPollOption, MeetingPollVote, MemberChatMessage
 
 
 class SystemNotificationListView(APIView):
@@ -803,4 +803,417 @@ class SendMeetingAnnouncementView(APIView):
             "failed_count": len(failed),
             "failed_details": failed,
         }, status=status.HTTP_200_OK)
+
+
+# ──────────────────────────────────────────────
+# Meeting Poll Views
+# ──────────────────────────────────────────────
+
+class CreateMeetingPollView(APIView):
+    """
+    POST /api/notifications/polls/create/
+    Admin creates a meeting poll with multiple date/time options.
+    Body: { title, description, venue, options: ["Sat 10AM", "Sun 3PM", ...] }
+    """
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        title = (request.data.get("title") or "").strip()
+        description = (request.data.get("description") or "").strip()
+        venue = (request.data.get("venue") or "").strip()
+        options = request.data.get("options", [])
+
+        if not title:
+            return Response({"detail": "Title is required."}, status=400)
+        if not options or len(options) < 2:
+            return Response({"detail": "At least 2 time options are required."}, status=400)
+
+        poll = MeetingPoll.objects.create(
+            title=title,
+            description=description,
+            venue=venue or "Online via Zoom/Teams",
+        )
+        for opt_text in options:
+            opt_text = str(opt_text).strip()
+            if opt_text:
+                MeetingPollOption.objects.create(poll=poll, option_text=opt_text)
+
+        # Optional: notify all members via email immediately if requested
+        send_email_invite = request.data.get("send_email", True)
+        sent_count = 0
+        if send_email_invite:
+            sent_count = send_poll_invitation_emails(poll)
+
+        return Response({
+            "message": f"Meeting poll published successfully{' and email invitations sent to ' + str(sent_count) + ' members' if sent_count else ''}.",
+            "poll_id": poll.id,
+            "emails_sent": sent_count,
+        }, status=201)
+
+
+def send_poll_invitation_emails(poll):
+    """Broadcasts an email to all active members inviting them to vote on the meeting poll."""
+    members = Member.objects.select_related('user').all()
+    recipient_emails = []
+    for m in members:
+        email = get_member_email(m)
+        if email and '@' in email and email not in recipient_emails:
+            recipient_emails.append(email)
+
+    if not recipient_emails:
+        return 0
+
+    options = poll.options.all()
+    options_list_html = "".join([
+        f"""<li style="margin-bottom:8px; padding:8px 12px; background:#f8fafc; border-left:3px solid #6366f1; border-radius:4px; font-weight:600; color:#334155;">
+            📅 {opt.option_text}
+        </li>""" for opt in options
+    ])
+
+    subject = f"🗳️ Vote Needed: {poll.title} — Meeting Time Poll"
+    html_content = f"""<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:30px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;max-width:600px;text-align:left;">
+      <tr>
+        <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:28px 32px;text-align:center;">
+          <h2 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;">Thimi Investment Group</h2>
+          <p style="color:#e0e7ff;margin:6px 0 0 0;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Meeting Date &amp; Time Poll</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px 32px;">
+          <h3 style="color:#1e293b;margin-top:0;">{poll.title}</h3>
+          <p style="color:#475569;font-size:14px;line-height:1.6;">{poll.description or 'The administration has opened a poll to decide the date and timing for our upcoming meeting. Please review the proposed options and cast your vote, or suggest a time that suits you best.'}</p>
+          
+          <div style="background:#f8fafc;border-radius:8px;padding:14px 18px;margin:20px 0;border:1px solid #e2e8f0;">
+            <p style="margin:0 0 8px 0;font-size:13px;color:#64748b;"><strong>📍 Venue:</strong> {poll.venue}</p>
+            <p style="margin:0;font-size:13px;color:#64748b;"><strong>⏰ Proposed Date/Time Options:</strong></p>
+            <ul style="list-style:none;padding-left:0;margin:10px 0 0 0;">
+              {options_list_html}
+            </ul>
+          </div>
+
+          <div style="text-align:center;margin:30px 0 10px 0;">
+            <a href="http://127.0.0.1:8000/dashboard/" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;font-size:15px;display:inline-block;">
+              👉 Open Dashboard &amp; Vote Now
+            </a>
+          </div>
+          <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:8px;">You can also suggest an alternative date/time directly from your Member Dashboard.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#f8fafc;padding:16px;text-align:center;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;">
+          © {timezone.now().year} Thimi Investment Group. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>"""
+
+    count = 0
+    for email in recipient_emails:
+        try:
+            send_mail(
+                subject=subject,
+                message=f"Meeting Poll: {poll.title}\nPlease log in to your Member Dashboard to cast your vote: http://127.0.0.1:8000/dashboard/",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                html_message=html_content,
+                fail_silently=True,
+            )
+            count += 1
+        except Exception:
+            pass
+    return count
+
+
+class BroadcastPollInviteView(APIView):
+    """
+    POST /api/notifications/polls/<pk>/broadcast/
+    Admin manually triggers sending or resending the poll voting invite email to all members.
+    """
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            poll = MeetingPoll.objects.get(id=pk, is_active=True)
+        except MeetingPoll.DoesNotExist:
+            return Response({"detail": "Active poll not found."}, status=404)
+
+        count = send_poll_invitation_emails(poll)
+        return Response({
+            "message": f"Poll invitation sent to {count} member(s).",
+            "sent_count": count
+        })
+
+
+class MeetingPollListView(APIView):
+    """
+    GET /api/notifications/polls/
+    Returns active polls with options and vote counts for authenticated members.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Return all active polls, plus recently finalized polls
+        polls = MeetingPoll.objects.filter(is_active=True)
+        result = []
+        for poll in polls:
+            options_data = []
+            user_vote_option_id = None
+            user_vote = MeetingPollVote.objects.filter(poll=poll, user=request.user).first()
+            if user_vote:
+                user_vote_option_id = user_vote.option_id
+
+            for opt in poll.options.all():
+                vote_count = opt.votes.count()
+                voters = list(
+                    opt.votes.select_related('user').values_list(
+                        'user__first_name', 'user__last_name', 'user__username'
+                    )
+                )
+                voter_names = [
+                    (f"{fn} {ln}".strip() or uname) for fn, ln, uname in voters
+                ]
+                
+                s_by = None
+                if opt.suggested_by:
+                    s_by = f"{opt.suggested_by.first_name} {opt.suggested_by.last_name}".strip() or opt.suggested_by.username
+
+                options_data.append({
+                    "id": opt.id,
+                    "text": opt.option_text,
+                    "vote_count": vote_count,
+                    "voters": voter_names,
+                    "suggested_by": s_by,
+                })
+
+            result.append({
+                "id": poll.id,
+                "title": poll.title,
+                "description": poll.description,
+                "venue": poll.venue,
+                "created_at": poll.created_at.strftime("%Y-%m-%d %H:%M"),
+                "options": options_data,
+                "user_voted_option_id": user_vote_option_id,
+                "total_votes": poll.votes.count(),
+                "final_option_id": poll.final_option.id if poll.final_option else None,
+                "final_option_text": poll.final_option.option_text if poll.final_option else None,
+            })
+        return Response(result)
+
+
+class SuggestMeetingPollOptionView(APIView):
+    """
+    POST /api/notifications/polls/suggest/
+    Allows members to suggest a date/time option.
+    Body: { poll_id, option_text }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        poll_id = request.data.get("poll_id")
+        option_text = (request.data.get("option_text") or "").strip()
+
+        if not poll_id or not option_text:
+            return Response({"detail": "poll_id and option_text are required."}, status=400)
+
+        try:
+            poll = MeetingPoll.objects.get(id=poll_id, is_active=True)
+        except MeetingPoll.DoesNotExist:
+            return Response({"detail": "Poll not found or closed."}, status=404)
+
+        # Check if option already exists
+        exists = MeetingPollOption.objects.filter(poll=poll, option_text__iexact=option_text).exists()
+        if exists:
+            return Response({"detail": "This option already exists in the poll."}, status=400)
+
+        option = MeetingPollOption.objects.create(
+            poll=poll,
+            option_text=option_text,
+            suggested_by=request.user
+        )
+
+        return Response({
+            "message": "Time option suggested successfully and added to the poll.",
+            "option_id": option.id,
+        }, status=201)
+
+
+class FinalizeMeetingPollView(APIView):
+    """
+    POST /api/notifications/polls/finalize/
+    Allows admins to finalize a date/time option.
+    Body: { poll_id, option_id }
+    """
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        poll_id = request.data.get("poll_id")
+        option_id = request.data.get("option_id")
+
+        if not poll_id or not option_id:
+            return Response({"detail": "poll_id and option_id are required."}, status=400)
+
+        try:
+            poll = MeetingPoll.objects.get(id=poll_id)
+        except MeetingPoll.DoesNotExist:
+            return Response({"detail": "Poll not found."}, status=404)
+
+        try:
+            option = MeetingPollOption.objects.get(id=option_id, poll=poll)
+        except MeetingPollOption.DoesNotExist:
+            return Response({"detail": "Invalid option for this poll."}, status=404)
+
+        poll.final_option = option
+        # Set is_active = False or keep True so users can still see it. Let's keep it True but marked as finalized.
+        poll.save()
+
+        return Response({
+            "message": "Meeting time finalized successfully.",
+            "final_option_text": option.option_text,
+        })
+
+
+
+class CastPollVoteView(APIView):
+    """
+    POST /api/notifications/polls/vote/
+    Body: { poll_id, option_id }
+    Members vote or change their vote.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        poll_id = request.data.get("poll_id")
+        option_id = request.data.get("option_id")
+
+        if not poll_id or not option_id:
+            return Response({"detail": "poll_id and option_id are required."}, status=400)
+
+        try:
+            poll = MeetingPoll.objects.get(id=poll_id, is_active=True)
+        except MeetingPoll.DoesNotExist:
+            return Response({"detail": "Poll not found or closed."}, status=404)
+
+        try:
+            option = MeetingPollOption.objects.get(id=option_id, poll=poll)
+        except MeetingPollOption.DoesNotExist:
+            return Response({"detail": "Invalid option."}, status=404)
+
+        vote, created = MeetingPollVote.objects.update_or_create(
+            poll=poll,
+            user=request.user,
+            defaults={"option": option},
+        )
+
+        return Response({
+            "message": "Vote recorded." if created else "Vote updated.",
+            "option_id": option.id,
+        })
+
+
+class MeetingPollDetailView(APIView):
+    """
+    GET /api/notifications/polls/<pk>/
+    DELETE /api/notifications/polls/<pk>/  (admin closes/deletes poll)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            poll = MeetingPoll.objects.get(id=pk)
+        except MeetingPoll.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+
+        options_data = []
+        for opt in poll.options.all():
+            voters = list(
+                opt.votes.select_related('user').values_list(
+                    'user__first_name', 'user__last_name', 'user__username'
+                )
+            )
+            voter_names = [(f"{fn} {ln}".strip() or uname) for fn, ln, uname in voters]
+            options_data.append({
+                "id": opt.id,
+                "text": opt.option_text,
+                "vote_count": opt.votes.count(),
+                "voters": voter_names,
+            })
+
+        return Response({
+            "id": poll.id,
+            "title": poll.title,
+            "description": poll.description,
+            "venue": poll.venue,
+            "is_active": poll.is_active,
+            "created_at": poll.created_at.strftime("%Y-%m-%d %H:%M"),
+            "options": options_data,
+            "total_votes": poll.votes.count(),
+        })
+
+    def delete(self, request, pk):
+        if not request.user.is_staff:
+            return Response({"detail": "Admin only."}, status=403)
+        try:
+            poll = MeetingPoll.objects.get(id=pk)
+        except MeetingPoll.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+        poll.is_active = False
+        poll.save()
+        return Response({"message": "Poll closed."})
+
+
+# ──────────────────────────────────────────────
+# Member Chat Views
+# ──────────────────────────────────────────────
+
+class ChatMessagesView(APIView):
+    """
+    GET  /api/notifications/chat/ — returns last 100 messages
+    POST /api/notifications/chat/ — send a message { message: "..." }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = MemberChatMessage.objects.select_related('user').order_by('-created_at')[:100]
+        messages = list(reversed(messages))
+        result = []
+        for msg in messages:
+            full_name = f"{msg.user.first_name} {msg.user.last_name}".strip() or msg.user.username
+            result.append({
+                "id": msg.id,
+                "user": full_name,
+                "username": msg.user.username,
+                "message": msg.message,
+                "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "is_mine": msg.user_id == request.user.id,
+            })
+        return Response(result)
+
+    def post(self, request):
+        message_text = (request.data.get("message") or "").strip()
+        if not message_text:
+            return Response({"detail": "Message cannot be empty."}, status=400)
+        if len(message_text) > 1000:
+            return Response({"detail": "Message too long (max 1000 chars)."}, status=400)
+
+        msg = MemberChatMessage.objects.create(
+            user=request.user,
+            message=message_text,
+        )
+        full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        return Response({
+            "id": msg.id,
+            "user": full_name,
+            "username": request.user.username,
+            "message": msg.message,
+            "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "is_mine": True,
+        }, status=201)
 
