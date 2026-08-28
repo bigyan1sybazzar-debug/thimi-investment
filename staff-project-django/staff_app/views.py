@@ -135,6 +135,10 @@ def checkin_view(request, job_pk):
     job = get_object_or_404(Job, pk=job_pk, assigned_staff=request.user)
     if request.method == 'POST':
         try:
+            print("--- CHECK-IN POST ---")
+            print("POST data:", request.POST)
+            print("FILES data:", request.FILES)
+            
             lat      = float(request.POST.get('lat', 0))
             lng      = float(request.POST.get('lng', 0))
             accuracy = float(request.POST.get('accuracy', 0))
@@ -143,7 +147,7 @@ def checkin_view(request, job_pk):
             distance   = haversine_distance(job.lat, job.lng, lat, lng)
             is_inside  = distance <= job.geofence_radius
 
-            CheckInRecord.objects.create(
+            record = CheckInRecord.objects.create(
                 job=job,
                 user=request.user,
                 check_in_lat=lat,
@@ -154,8 +158,10 @@ def checkin_view(request, job_pk):
                 selfie=selfie,
                 status='PENDING_APPROVAL',
             )
+            print("Created check-in record ID:", record.id, "Selfie:", record.selfie)
             messages.success(request, f"Checked in to '{job.title}' successfully!")
         except Exception as e:
+            print("Check-in error:", str(e))
             messages.error(request, f"Check-in failed: {e}")
     return redirect('staff_dashboard')
 
@@ -168,6 +174,10 @@ def checkout_view(request, record_pk):
     record = get_object_or_404(CheckInRecord, pk=record_pk, user=request.user)
     if request.method == 'POST':
         try:
+            print("--- CHECK-OUT POST ---")
+            print("POST data:", request.POST)
+            print("FILES data:", request.FILES)
+
             lat      = float(request.POST.get('lat', 0))
             lng      = float(request.POST.get('lng', 0))
             accuracy = float(request.POST.get('accuracy', 0))
@@ -185,9 +195,10 @@ def checkout_view(request, record_pk):
                 record.check_out_selfie = selfie
             record.status = 'COMPLETED'
             record.save()
-
+            print("Updated check-out record ID:", record.id, "Checkout selfie:", record.check_out_selfie)
             messages.success(request, f"Checked out from '{record.job.title}'! Duration: {duration} min.")
         except Exception as e:
+            print("Check-out error:", str(e))
             messages.error(request, f"Check-out failed: {e}")
     return redirect('staff_dashboard')
 
